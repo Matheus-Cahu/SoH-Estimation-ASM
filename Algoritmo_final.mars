@@ -1,0 +1,651 @@
+.data
+# =================================================================
+# CONFIGURAÇÃO DO ARQUIVO
+# =================================================================
+nome_arquivo: .asciiz "C:\\AOC\\TRABALHO AOC\\batteryDataset.csv" 
+
+# Buffer de Leitura (150kb)
+buffer: .space 150000  
+
+# =================================================================
+# CONSTANTES E TEXTOS
+# =================================================================
+text_abrir_sucesso: .asciiz "Arquivo aberto com sucesso!\nLendo e processando dados...\n"
+text_abrir_falha: .asciiz "ERRO: Falha ao abrir arquivo. Verifique se o caminho esta correto no codigo.\n"
+text_ler_sucesso: .asciiz "\n--- Leitura Concluida ---\nLinhas processadas: "
+text_inicio_ml:   .asciiz "\n\n--- Iniciando Treinamento com DATASET (Usuario nao interfere aqui) ---\n"
+text_resultado:   .asciiz "\n--- Treino Finalizado ---\nErro Medio Quadratico (MSE) no Teste: "
+
+# --- TEXTOS PARA IMPRESSÃO DOS PESOS ---
+text_pesos_titulo: .asciiz "\n\n=== MODELO TREINADO (COEFICIENTES CONGELADOS) ===\n"
+text_bias:         .asciiz "Bias (b): "
+text_w_titulo:     .asciiz "\nPesos (W) aprendidos:\n"
+text_w_prefix:     .asciiz "  W["
+text_w_suffix:     .asciiz "]: "
+quebra_linha:      .asciiz "\n"
+
+# --- TEXTOS PARA O USUÁRIO (APENAS PREDIÇÃO) ---
+text_menu_input:   .asciiz "\n\n=== TESTE MANUAL (O modelo nao aprende com estes dados) ===\nInsira os parametros:\n"
+prompt_cycle:      .asciiz "Cycle: "
+prompt_chI:        .asciiz "chI: "
+prompt_chV:        .asciiz "chV: "
+prompt_chT:        .asciiz "chT: "
+prompt_disI:       .asciiz "disI: "
+prompt_disV:       .asciiz "disV: "
+prompt_disT:       .asciiz "disT: "
+prompt_BCt:        .asciiz "BCt: "
+text_soh_final:    .asciiz "\n>>> SOH ESTIMADO: "
+text_continuar:    .asciiz "\nDeseja testar outra bateria? (1=Sim, 0=Nao): "
+
+# Array de ponteiros para as perguntas
+.align 2
+prompts_usuario:
+    .word prompt_cycle, prompt_chI, prompt_chV, prompt_chT, prompt_disI, prompt_disV, prompt_disT, prompt_BCt
+
+# Variáveis de Controle
+contador_linhas: .word 0 
+constante_10:    .float 10.0
+
+# Constantes Matemáticas
+const_0_7:     .float 0.7    
+const_1_0:     .float 1.0    
+const_0_0:     .float 0.0    
+const_2_0:     .float 2.0    
+learning_rate: .float 0.01   
+epochs:        .word 1000    
+
+# =================================================================
+# ARRAYS DE DADOS (ALINHADOS)
+# =================================================================
+.align 2  
+
+# Arrays (1000 linhas x 4 bytes)
+array_cycle: .space 4000 
+array_chI:   .space 4000
+array_chV:   .space 4000
+array_chT:   .space 4000
+array_disI:  .space 4000
+array_disV:  .space 4000
+array_disT:  .space 4000
+array_BCt:   .space 4000
+array_SOH:   .space 4000
+array_RUL:   .space 4000 
+
+# Tabela de ponteiros
+.align 2
+ponteiros_arrays:
+    .word array_cycle 
+    .word array_chI   
+    .word array_chV   
+    .word array_chT   
+    .word array_disI  
+    .word array_disV  
+    .word array_disT  
+    .word array_BCt   
+    .word array_SOH   
+    .word array_RUL   
+
+# =================================================================
+# VARIÁVEIS DO MODELO
+# =================================================================
+.align 2
+# Pesos (W) e Bias (b) - Estes serão modificados APENAS no treino
+W:          .float 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+b:          .float 0.5       
+
+# Gradientes (Usados só no treino)
+grad_W:     .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+grad_b:     .float 0.0
+
+# Médias e Desvios Padrão do DATASET (Usados como referência fixa para o usuário)
+array_medias: .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 
+array_stds:   .float 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 
+
+# Controle
+n_treino:   .word 0
+n_teste:    .word 0
+
+.text
+.globl main
+
+main:
+    # ---------------------------------------------------------
+    # PARTE 1: LER DATASET
+    # ---------------------------------------------------------
+    li $v0, 13      
+    la $a0, nome_arquivo  
+    li $a1, 0       
+    li $a2, 0       
+    syscall
+    move $s0, $v0   
+    blt $s0, 0, erro_abertura
+    
+    li $v0, 4
+    la $a0, text_abrir_sucesso
+    syscall
+    
+    li $v0, 14
+    move $a0, $s0
+    la $a1, buffer
+    li $a2, 150000  
+    syscall
+    move $s2, $v0   
+    
+    li $v0, 16      
+    move $a0, $s0
+    syscall
+    
+    beq $s2, $zero, exit
+    
+    la $t0, buffer
+    add $t0, $t0, $s2
+    sb $zero, 0($t0)
+
+    # ---------------------------------------------------------
+    # PARTE 2: PARSE (Dataset -> Memória)
+    # ---------------------------------------------------------
+    la $s1, buffer    
+    add $s5, $s1, $s2 
+    li $s3, 0         
+
+pular_cabecalho:
+    lb $t0, 0($s1)
+    addi $s1, $s1, 1
+    beq $t0, 10, inicio_linha_dados 
+    bge $s1, $s5, iniciar_machine_learning 
+    j pular_cabecalho
+
+inicio_linha_dados:
+    li $s3, 0         
+    move $s4, $s1     
+
+loop_parse:
+    bge $s1, $s5, fim_leitura_dados
+    lb $t0, 0($s1)
+    beq $t0, 44, achou_token   
+    beq $t0, 10, achou_token   
+    beq $t0, 13, pular_char    
+    beq $t0, 0,  fim_leitura_dados
+    addi $s1, $s1, 1
+    j loop_parse
+
+pular_char:
+    addi $s1, $s1, 1
+    move $s4, $s1
+    j loop_parse
+
+achou_token:
+    sb $zero, 0($s1) 
+    beq $s3, $zero, proxima_coluna_logica
+    move $a0, $s4     
+    move $a1, $s3     
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    jal converter_e_salvar_float
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+
+proxima_coluna_logica:
+    addi $s3, $s3, 1
+    addi $s1, $s1, 1  
+    li $t9, 11        
+    bne $s3, $t9, prepara_proximo_token
+    lw $t8, contador_linhas
+    addi $t8, $t8, 1
+    sw $t8, contador_linhas
+    li $s3, 0 
+
+prepara_proximo_token:
+    move $s4, $s1 
+    j loop_parse
+
+fim_leitura_dados:
+    li $v0, 4
+    la $a0, text_ler_sucesso
+    syscall
+    li $v0, 1
+    lw $a0, contador_linhas
+    syscall
+    j iniciar_machine_learning
+
+# ---------------------------------------------------------
+# FUNÇÃO AUXILIAR: ATOF
+# ---------------------------------------------------------
+converter_e_salvar_float:
+    lwc1 $f10, constante_10
+    mtc1 $zero, $f0
+    cvt.s.w $f0, $f0
+    move $t0, $a0
+loop_atof:
+    lb $t1, 0($t0)
+    beq $t1, $zero, fim_atof
+    li $t2, 48
+    li $t3, 57
+    blt $t1, $t2, prox_char_atof
+    bgt $t1, $t3, prox_char_atof
+    sub $t1, $t1, $t2 
+    mtc1 $t1, $f1
+    cvt.s.w $f1, $f1
+    mul.s $f0, $f0, $f10
+    add.s $f0, $f0, $f1
+prox_char_atof:
+    addi $t0, $t0, 1
+    j loop_atof
+fim_atof:
+    addi $t4, $a1, -1   
+    la $t5, ponteiros_arrays
+    sll $t4, $t4, 2
+    add $t5, $t5, $t4
+    lw $t6, 0($t5)      
+    lw $t7, contador_linhas
+    sll $t7, $t7, 2
+    add $t6, $t6, $t7
+    swc1 $f0, 0($t6)
+    jr $ra
+
+# =================================================================
+# PARTE 3: MACHINE LEARNING (TREINAMENTO COM DATASET)
+# =================================================================
+iniciar_machine_learning:
+    li $v0, 4
+    la $a0, text_inicio_ml
+    syscall
+
+    # Split Treino/Teste
+    lw $t0, contador_linhas
+    mtc1 $t0, $f0
+    cvt.s.w $f0, $f0
+    lwc1 $f1, const_0_7
+    mul.s $f0, $f0, $f1
+    cvt.w.s $f0, $f0     
+    mfc1 $t1, $f0        
+    sw $t1, n_treino
+    sub $t2, $t0, $t1
+    sw $t2, n_teste
+
+    # Normalização e Cálculo de Parâmetros do Dataset
+    li $s6, 0             
+loop_normalizacao:
+    li $t9, 9             
+    beq $s6, $t9, inicio_treinamento
+    
+    la $t0, ponteiros_arrays
+    sll $t1, $s6, 2
+    add $t0, $t0, $t1
+    lw $s0, 0($t0)
+    
+    # Calcular Média
+    mtc1 $zero, $f10      
+    lw $t0, contador_linhas
+    li $t1, 0             
+loop_media:
+    beq $t1, $t0, fim_media
+    sll $t2, $t1, 2
+    add $t3, $s0, $t2
+    lwc1 $f1, 0($t3)
+    add.s $f10, $f10, $f1
+    addi $t1, $t1, 1
+    j loop_media
+fim_media:
+    mtc1 $t0, $f2
+    cvt.s.w $f2, $f2
+    div.s $f10, $f10, $f2 
+    
+    # SALVAR MÉDIA (Para usar na predição depois)
+    la $t4, array_medias
+    sll $t5, $s6, 2
+    add $t4, $t4, $t5
+    swc1 $f10, 0($t4)
+
+    # Calcular Std
+    mtc1 $zero, $f11      
+    li $t1, 0
+loop_std:
+    beq $t1, $t0, fim_std
+    sll $t2, $t1, 2
+    add $t3, $s0, $t2
+    lwc1 $f1, 0($t3)
+    sub.s $f3, $f1, $f10  
+    mul.s $f3, $f3, $f3   
+    add.s $f11, $f11, $f3
+    addi $t1, $t1, 1
+    j loop_std
+fim_std:
+    div.s $f11, $f11, $f2 
+    sqrt.s $f11, $f11     
+    mtc1 $zero, $f4
+    c.eq.s $f11, $f4
+    bc1f salvar_std
+    lwc1 $f11, const_1_0
+salvar_std:
+    # SALVAR STD (Para usar na predição depois)
+    la $t4, array_stds
+    sll $t5, $s6, 2
+    add $t4, $t4, $t5
+    swc1 $f11, 0($t4)
+
+aplicar_norm:
+    # Aplica normalização no Dataset para treinar
+    li $t1, 0
+loop_apply:
+    beq $t1, $t0, prox_col_norm
+    sll $t2, $t1, 2
+    add $t3, $s0, $t2
+    lwc1 $f1, 0($t3)
+    sub.s $f1, $f1, $f10
+    div.s $f1, $f1, $f11
+    swc1 $f1, 0($t3)
+    addi $t1, $t1, 1
+    j loop_apply
+
+prox_col_norm:
+    addi $s6, $s6, 1
+    j loop_normalizacao
+
+    # Loop de Treinamento (Atualiza W e b)
+inicio_treinamento:
+    li $s7, 0               
+    lw $s6, epochs          
+
+loop_epoch:
+    beq $s7, $s6, fim_treino
+    la $t0, grad_W
+    li $t1, 0
+    mtc1 $zero, $f0
+zerar_grads:
+    beq $t1, 8, zerar_bias
+    sll $t2, $t1, 2
+    add $t3, $t0, $t2
+    swc1 $f0, 0($t3)
+    addi $t1, $t1, 1
+    j zerar_grads
+zerar_bias:
+    swc1 $f0, grad_b
+
+    lw $t8, n_treino
+    li $t9, 0               
+loop_linha:
+    beq $t9, $t8, update_pesos
+    lwc1 $f4, b             
+    li $t1, 0               
+loop_dot:
+    beq $t1, 8, calc_erro
+    la $t2, W
+    sll $t3, $t1, 2
+    add $t2, $t2, $t3
+    lwc1 $f5, 0($t2)
+    la $t4, ponteiros_arrays
+    add $t4, $t4, $t3       
+    lw $t4, 0($t4)
+    sll $t5, $t9, 2
+    add $t4, $t4, $t5
+    lwc1 $f6, 0($t4)
+    mul.s $f6, $f6, $f5
+    add.s $f4, $f4, $f6
+    addi $t1, $t1, 1
+    j loop_dot
+calc_erro:
+    la $t4, ponteiros_arrays
+    lw $t4, 32($t4) 
+    sll $t5, $t9, 2
+    add $t4, $t4, $t5
+    lwc1 $f7, 0($t4)
+    sub.s $f8, $f4, $f7 
+    lwc1 $f10, grad_b
+    add.s $f10, $f10, $f8
+    swc1 $f10, grad_b
+    li $t1, 0
+loop_grad:
+    beq $t1, 8, prox_linha
+    la $t4, ponteiros_arrays
+    sll $t3, $t1, 2
+    add $t4, $t4, $t3
+    lw $t4, 0($t4)
+    sll $t5, $t9, 2
+    add $t4, $t4, $t5
+    lwc1 $f6, 0($t4)
+    mul.s $f6, $f6, $f8     
+    la $t2, grad_W
+    sll $t3, $t1, 2
+    add $t2, $t2, $t3
+    lwc1 $f9, 0($t2)
+    add.s $f9, $f9, $f6
+    swc1 $f9, 0($t2)
+    addi $t1, $t1, 1
+    j loop_grad
+prox_linha:
+    addi $t9, $t9, 1
+    j loop_linha
+update_pesos:
+    lwc1 $f1, learning_rate
+    lw $t0, n_treino
+    mtc1 $t0, $f2
+    cvt.s.w $f2, $f2
+    div.s $f1, $f1, $f2
+    lwc1 $f3, b
+    lwc1 $f4, grad_b
+    mul.s $f4, $f4, $f1
+    sub.s $f3, $f3, $f4
+    swc1 $f3, b
+    li $t1, 0
+loop_update:
+    beq $t1, 8, prox_epoch
+    la $t2, W
+    sll $t3, $t1, 2
+    add $t2, $t2, $t3
+    lwc1 $f3, 0($t2) 
+    la $t4, grad_W
+    add $t4, $t4, $t3
+    lwc1 $f5, 0($t4) 
+    mul.s $f5, $f5, $f1
+    sub.s $f3, $f3, $f5
+    swc1 $f3, 0($t2)
+    addi $t1, $t1, 1
+    j loop_update
+prox_epoch:
+    addi $s7, $s7, 1
+    j loop_epoch
+
+fim_treino:
+
+    # 4. TESTE (MSE)
+    mtc1 $zero, $f20        
+    lw $t9, n_treino        
+    lw $t0, contador_linhas
+loop_teste:
+    beq $t9, $t0, fim_calculo_teste
+    lwc1 $f4, b
+    li $t1, 0
+loop_dot_test:
+    beq $t1, 8, calc_erro_test
+    la $t2, W
+    sll $t3, $t1, 2
+    add $t2, $t2, $t3
+    lwc1 $f5, 0($t2)
+    la $t4, ponteiros_arrays
+    add $t4, $t4, $t3
+    lw $t4, 0($t4)
+    sll $t5, $t9, 2
+    add $t4, $t4, $t5
+    lwc1 $f6, 0($t4)
+    mul.s $f6, $f6, $f5
+    add.s $f4, $f4, $f6
+    addi $t1, $t1, 1
+    j loop_dot_test
+calc_erro_test:
+    la $t4, ponteiros_arrays
+    lw $t4, 32($t4)
+    sll $t5, $t9, 2
+    add $t4, $t4, $t5
+    lwc1 $f7, 0($t4)
+    sub.s $f8, $f4, $f7     
+    mul.s $f8, $f8, $f8     
+    add.s $f20, $f20, $f8   
+    addi $t9, $t9, 1
+    j loop_teste
+fim_calculo_teste:
+    lw $t0, n_teste
+    mtc1 $t0, $f2
+    cvt.s.w $f2, $f2
+    lwc1 $f3, const_2_0
+    mul.s $f2, $f2, $f3
+    div.s $f12, $f20, $f2   
+    li $v0, 4
+    la $a0, text_resultado
+    syscall
+    li $v0, 2               
+    syscall
+
+# =================================================================
+# PARTE 5: IMPRESSÃO DOS PESOS APRENDIDOS
+# =================================================================
+print_parametros_finais:
+    li $v0, 4
+    la $a0, text_pesos_titulo
+    syscall
+    li $v0, 4
+    la $a0, text_bias
+    syscall
+    lwc1 $f12, b       
+    li $v0, 2          
+    syscall
+    li $v0, 4
+    la $a0, quebra_linha
+    syscall
+    li $v0, 4
+    la $a0, text_w_titulo
+    syscall
+    li $t0, 0          
+    li $t1, 8          
+loop_print_w:
+    beq $t0, $t1, input_usuario
+    li $v0, 4
+    la $a0, text_w_prefix
+    syscall
+    li $v0, 1
+    move $a0, $t0
+    syscall
+    li $v0, 4
+    la $a0, text_w_suffix
+    syscall
+    la $t2, W          
+    sll $t3, $t0, 2    
+    add $t2, $t2, $t3  
+    lwc1 $f12, 0($t2)  
+    li $v0, 2
+    syscall
+    li $v0, 4
+    la $a0, quebra_linha
+    syscall
+    addi $t0, $t0, 1   
+    j loop_print_w
+
+# =================================================================
+# PARTE 6: INTERAÇÃO COM USUÁRIO (APENAS PREDIÇÃO - SEM TREINO)
+# =================================================================
+input_usuario:
+    li $v0, 4
+    la $a0, text_menu_input
+    syscall
+    
+    # 1. Acumulador = Bias (Já aprendemos, é fixo)
+    lwc1 $f12, b 
+    
+    li $t0, 0          # Índice Característica
+    li $t1, 8          # Total
+
+loop_inputs:
+    beq $t0, $t1, mostrar_resultado_usuario
+    
+    # Imprimir Pergunta
+    la $t2, prompts_usuario
+    sll $t3, $t0, 2
+    add $t2, $t2, $t3
+    lw $a0, 0($t2)     
+    li $v0, 4
+    syscall
+    
+    # Ler Float do Usuário
+    li $v0, 6
+    syscall            # Valor em $f0
+    
+    # -----------------------------------------------------
+    # CONVERSÃO DE UNIDADE (NORMALIZAÇÃO MANUAL)
+    # NÃO É TREINO! Apenas transformamos o dado do usuário
+    # para a mesma "moeda" que o modelo conhece.
+    # Fórmula: (ValorUsuario - MediaTreino) / DesvioTreino
+    # -----------------------------------------------------
+    
+    # Carregar Média do Dataset (Fixo)
+    la $t4, array_medias
+    add $t4, $t4, $t3  
+    lwc1 $f1, 0($t4)
+    
+    # Carregar Std do Dataset (Fixo)
+    la $t4, array_stds
+    add $t4, $t4, $t3
+    lwc1 $f2, 0($t4)
+    
+    sub.s $f0, $f0, $f1  # (X - mu)
+    div.s $f0, $f0, $f2  # / sigma
+    
+    # Multiplicar pelo Peso Aprendido: W[$t0] * X_norm
+    la $t4, W
+    add $t4, $t4, $t3
+    lwc1 $f3, 0($t4)
+    
+    mul.s $f0, $f0, $f3  # W * X
+    add.s $f12, $f12, $f0 # Acumula na previsão
+    
+    addi $t0, $t0, 1
+    j loop_inputs
+
+mostrar_resultado_usuario:
+    # O resultado em $f12 está "Normalizado" (escala reduzida).
+    # Precisamos converter de volta para SOH real.
+    # SOH_real = (Resultado_Norm * Std_SOH) + Media_SOH
+    
+    # Carrega Media SOH (Índice 8)
+    la $t4, array_medias
+    lwc1 $f1, 32($t4)    
+    
+    # Carrega Std SOH (Índice 8)
+    la $t4, array_stds
+    lwc1 $f2, 32($t4)
+    
+    mul.s $f12, $f12, $f2  # Desfaz divisão
+    add.s $f12, $f12, $f1  # Desfaz subtração
+    
+    # Print Resultado
+    li $v0, 4
+    la $a0, text_soh_final
+    syscall
+    
+    li $v0, 2
+    syscall
+    
+    # Repetir?
+    li $v0, 4
+    la $a0, text_continuar
+    syscall
+    
+    li $v0, 5    
+    syscall
+    move $t9, $v0
+    
+    bne $t9, $zero, input_usuario 
+
+end_program:
+    li $v0, 10
+    syscall
+
+erro_abertura:
+    li $v0, 4
+    la $a0, text_abrir_falha
+    syscall
+    li $v0, 10
+    syscall
+
+exit:
+    li $v0, 10
+    syscall
