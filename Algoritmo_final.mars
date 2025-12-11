@@ -2,10 +2,10 @@
 # =================================================================
 # CONFIGURAÇÃO DO ARQUIVO
 # =================================================================
-nome_arquivo: .asciiz "C:\\AOC\\TRABALHO AOC\\batteryDataset.csv" 
+nome_arquivo: .asciiz "C:\\AOC\\TRABALHO AOC\\batteryDataset.csv" 
 
 # Buffer de Leitura (150kb)
-buffer: .space 150000  
+buffer: .space 150000  
 
 # =================================================================
 # CONSTANTES E TEXTOS
@@ -13,639 +13,639 @@ buffer: .space 150000
 text_abrir_sucesso: .asciiz "Arquivo aberto com sucesso!\nLendo e processando dados...\n"
 text_abrir_falha: .asciiz "ERRO: Falha ao abrir arquivo. Verifique se o caminho esta correto no codigo.\n"
 text_ler_sucesso: .asciiz "\n--- Leitura Concluida ---\nLinhas processadas: "
-text_inicio_ml:   .asciiz "\n\n--- Iniciando Treinamento com DATASET (Usuario nao interfere aqui) ---\n"
-text_resultado:   .asciiz "\n--- Treino Finalizado ---\nErro Medio Quadratico (MSE) no Teste: "
+text_inicio_ml:   .asciiz "\n\n--- Iniciando Treinamento com DATASET (Usuario nao interfere aqui) ---\n"
+text_resultado:   .asciiz "\n--- Treino Finalizado ---\nErro Medio Quadratico (MSE) no Teste: "
 
 # --- TEXTOS PARA IMPRESSÃO DOS PESOS ---
 text_pesos_titulo: .asciiz "\n\n=== MODELO TREINADO (COEFICIENTES CONGELADOS) ===\n"
-text_bias:         .asciiz "Bias (b): "
-text_w_titulo:     .asciiz "\nPesos (W) aprendidos:\n"
-text_w_prefix:     .asciiz "  W["
-text_w_suffix:     .asciiz "]: "
-quebra_linha:      .asciiz "\n"
+text_bias:         .asciiz "Bias (b): "
+text_w_titulo:     .asciiz "\nPesos (W) aprendidos:\n"
+text_w_prefix:     .asciiz "  W["
+text_w_suffix:     .asciiz "]: "
+quebra_linha:      .asciiz "\n"
 
 # --- TEXTOS PARA O USUÁRIO (APENAS PREDIÇÃO) ---
-text_menu_input:   .asciiz "\n\n=== TESTE MANUAL (O modelo nao aprende com estes dados) ===\nInsira os parametros:\n"
-prompt_cycle:      .asciiz "Cycle: "
-prompt_chI:        .asciiz "chI: "
-prompt_chV:        .asciiz "chV: "
-prompt_chT:        .asciiz "chT: "
-prompt_disI:       .asciiz "disI: "
-prompt_disV:       .asciiz "disV: "
-prompt_disT:       .asciiz "disT: "
-prompt_BCt:        .asciiz "BCt: "
-text_soh_final:    .asciiz "\n>>> SOH ESTIMADO: "
-text_continuar:    .asciiz "\nDeseja testar outra bateria? (1=Sim, 0=Nao): "
+text_menu_input:   .asciiz "\n\n=== TESTE MANUAL (O modelo nao aprende com estes dados) ===\nInsira os parametros:\n"
+prompt_cycle:      .asciiz "Cycle: "
+prompt_chI:        .asciiz "chI: "
+prompt_chV:        .asciiz "chV: "
+prompt_chT:        .asciiz "chT: "
+prompt_disI:       .asciiz "disI: "
+prompt_disV:       .asciiz "disV: "
+prompt_disT:       .asciiz "disT: "
+prompt_BCt:        .asciiz "BCt: "
+text_soh_final:    .asciiz "\n>>> SOH ESTIMADO: "
+text_continuar:    .asciiz "\nDeseja testar outra bateria? (1=Sim, 0=Nao): "
 
 # Array de ponteiros para as perguntas
 .align 2
 prompts_usuario:
-    .word prompt_cycle, prompt_chI, prompt_chV, prompt_chT, prompt_disI, prompt_disV, prompt_disT, prompt_BCt
+    .word prompt_cycle, prompt_chI, prompt_chV, prompt_chT, prompt_disI, prompt_disV, prompt_disT, prompt_BCt
 
 # Variáveis de Controle
-contador_linhas: .word 0 
-constante_10:    .float 10.0
+contador_linhas: .word 0 
+constante_10:    .float 10.0
 
 # Constantes Matemáticas
-const_0_7:     .float 0.7    
-const_1_0:     .float 1.0    
-const_0_0:     .float 0.0    
-const_2_0:     .float 2.0    
-learning_rate: .float 0.01   
-epochs:        .word 1000    
+const_0_7:     .float 0.7    
+const_1_0:     .float 1.0    
+const_0_0:     .float 0.0    
+const_2_0:     .float 2.0    
+learning_rate: .float 0.01   
+epochs:        .word 1000    
 
 # =================================================================
 # ARRAYS DE DADOS (ALINHADOS)
 # =================================================================
-.align 2  
+.align 2  
 
 # Arrays (1000 linhas x 4 bytes)
-array_cycle: .space 4000 
-array_chI:   .space 4000
-array_chV:   .space 4000
-array_chT:   .space 4000
-array_disI:  .space 4000
-array_disV:  .space 4000
-array_disT:  .space 4000
-array_BCt:   .space 4000
-array_SOH:   .space 4000
-array_RUL:   .space 4000 
+array_cycle: .space 4000 
+array_chI:   .space 4000
+array_chV:   .space 4000
+array_chT:   .space 4000
+array_disI:  .space 4000
+array_disV:  .space 4000
+array_disT:  .space 4000
+array_BCt:   .space 4000
+array_SOH:   .space 4000
+array_RUL:   .space 4000 
 
 # Tabela de ponteiros
 .align 2
 ponteiros_arrays:
-    .word array_cycle 
-    .word array_chI   
-    .word array_chV   
-    .word array_chT   
-    .word array_disI  
-    .word array_disV  
-    .word array_disT  
-    .word array_BCt   
-    .word array_SOH   
-    .word array_RUL   
+    .word array_cycle 
+    .word array_chI   
+    .word array_chV   
+    .word array_chT   
+    .word array_disI  
+    .word array_disV  
+    .word array_disT  
+    .word array_BCt   
+    .word array_SOH   
+    .word array_RUL   
 
 # =================================================================
 # VARIÁVEIS DO MODELO
 # =================================================================
 .align 2
 # Pesos (W) e Bias (b) - Estes serão modificados APENAS no treino
-W:          .float 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
-b:          .float 0.5       
+W:          .float 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+b:          .float 0.5       
 
 # Gradientes (Usados só no treino)
-grad_W:     .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-grad_b:     .float 0.0
+grad_W:     .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+grad_b:     .float 0.0
 
 # Médias e Desvios Padrão do DATASET (Usados como referência fixa para o usuário)
-array_medias: .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 
-array_stds:   .float 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 
+array_medias: .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 
+array_stds:   .float 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 
 
 # Controle
-n_treino:   .word 0
-n_teste:    .word 0
+n_treino:   .word 0
+n_teste:    .word 0
 
 .text
 .globl main
 
 main:
-    # ---------------------------------------------------------
-    # PARTE 1: LER DATASET
-    # ---------------------------------------------------------
-    li $v0, 13      
-    la $a0, nome_arquivo  
-    li $a1, 0       
-    li $a2, 0       
-    syscall
-    move $s0, $v0   
-    blt $s0, 0, erro_abertura
-    
-    li $v0, 4
-    la $a0, text_abrir_sucesso
-    syscall
-    
-    li $v0, 14
-    move $a0, $s0
-    la $a1, buffer
-    li $a2, 150000  
-    syscall
-    move $s2, $v0   
-    
-    li $v0, 16      
-    move $a0, $s0
-    syscall
-    
-    beq $s2, $zero, exit
-    
-    la $t0, buffer
-    add $t0, $t0, $s2
-    sb $zero, 0($t0)
+    # ---------------------------------------------------------
+    # PARTE 1: LER DATASET
+    # ---------------------------------------------------------
+    li $v0, 13  #Syscall 13 abre o arquivo com configurações especificadas em a0, a1, a2.
+    la $a0, nome_arquivo  #a0: Nome do arquivo.
+    li $a1, 0   #a1: Read-Only.
+    li $a2, 0   #a2: Modo (ignorável).
+    syscall
+    move $s0, $v0   #Retorna em v0 um descritor de arquivo que é movido para s0.
+    blt $s0, 0, erro_abertura   #Caso tenha havido erro na abertura do arquivo, s0 retorna como -1 que nesse caso provoca uma mensagem de erro.
+    
+    li $v0, 4   #Caso não tenha havido erro na abertura, printa a mensagem de sucesso.
+    la $a0, text_abrir_sucesso
+    syscall
+    
+    li $v0, 14    #Syscall de leitura de arquivo, recebe por configuração a0, a1 e a2.
+    move $a0, $s0   #a0: Descritor do arquivo a ser lido.
+    la $a1, buffer    #a1: Endereço do buffer onde os dados lidos serão armazenados.
+    li $a2, 150000  #a2: Número máximo de bytes a serem lidos.
+    syscall
+    move $s2, $v0   #Retorna o número total de bytes lidos.
+    
+    li $v0, 16      #Syscall de fechar arquivo.
+    move $a0, $s0   #Descritor do arquivo a ser fechado.
+    syscall
+    
+    beq $s2, $zero, exit  #Se não leu nenhum byte, exit.
+    
+    la $t0, buffer    #Carrega em t0 o endereço do buffer.
+    add $t0, $t0, $s2   #Desloca para o final do buffer.
+    sb $zero, 0($t0)    #Adiciona \0 ao final do buffer, convertendo-o em uma string ASCIIZ.
 
-    # ---------------------------------------------------------
-    # PARTE 2: PARSE (Dataset -> Memória)
-    # ---------------------------------------------------------
-    la $s1, buffer    
-    add $s5, $s1, $s2 
-    li $s3, 0         
+    # ---------------------------------------------------------
+    # PARTE 2: PARSE (Dataset -> Memória)
+    # ---------------------------------------------------------
+    la $s1, buffer    #Define o ponteiro para varredura.
+    add $s5, $s1, $s2     #Define o limite da varredura.
+    li $s3, 0     #Inicializa o contador de coluna.
 
 pular_cabecalho:
-    lb $t0, 0($s1)
-    addi $s1, $s1, 1
-    beq $t0, 10, inicio_linha_dados 
-    bge $s1, $s5, iniciar_machine_learning 
-    j pular_cabecalho
+    lb $t0, 0($s1)    #Carrega em t0 o byte apontado por s1.
+    addi $s1, $s1, 1    #Incrementa s1 em 1.
+    beq $t0, 10, inicio_linha_dados   #Verifica se é o fim da linha.
+    bge $s1, $s5, iniciar_machine_learning    #Verifica se é o fim do arquivo.
+    j pular_cabecalho   #Se não, voltar para o início do loop.
 
 inicio_linha_dados:
-    li $s3, 0         
-    move $s4, $s1     
+    li $s3, 0          #Reseta o contador de coluna s3 para 0.
+    move $s4, $s1      #Salva o endereço de onde o token atual começa. $s1 aponta para o 1º caractere do token.
 
 loop_parse:
-    bge $s1, $s5, fim_leitura_dados
-    lb $t0, 0($s1)
-    beq $t0, 44, achou_token   
-    beq $t0, 10, achou_token   
-    beq $t0, 13, pular_char    
-    beq $t0, 0,  fim_leitura_dados
-    addi $s1, $s1, 1
-    j loop_parse
+    bge $s1, $s5, fim_leitura_dados #Condição de Parada: Se o ponteiro s1 atingir o limite s5, sai do loop.
+    lb $t0, 0($s1) #Carrega o caractere atual t0 apontado por $s1.
+    beq $t0, 44, achou_token    #Se o caractere for '44' (vírgula - ','), fim de um campo/token.
+    beq $t0, 10, achou_token    #Se o caractere for '10' (Line Feed - '\n'), fim de uma linha e de um token.
+    beq $t0, 13, pular_char     #Se o caractere for '13' (Carriage Return - '\r'), comum em Windows, pula.
+    beq $t0, 0,  fim_leitura_dados #Se o caractere for '0' (null-terminator), é o fim de todo o buffer, sai.
+    addi $s1, $s1, 1    #Move o ponteiro para o próximo caractere.
+    j loop_parse    #Volta para o início do loop.
 
 pular_char:
-    addi $s1, $s1, 1
-    move $s4, $s1
-    j loop_parse
+    addi $s1, $s1, 1    #Avança o ponteiro s1 para pular o caractere '\r'.
+    move $s4, $s1   #Atualiza o endereço de início do próximo token s4 para $s1, ignorando o '\r'.
+    j loop_parse    #Volta para o loop principal.
 
 achou_token:
-    sb $zero, 0($s1) 
-    beq $s3, $zero, proxima_coluna_logica
-    move $a0, $s4     
-    move $a1, $s3     
-    addi $sp, $sp, -4
-    sw $ra, 0($sp)
-    jal converter_e_salvar_float
-    lw $ra, 0($sp)
-    addi $sp, $sp, 4
+    sb $zero, 0($s1)    #Substitui o delimitador (',' ou '\n') pelo null-terminator ('\0'). Isso transforma o token em uma string ASCIIZ temporária.
+    beq $s3, $zero, proxima_coluna_logica   #Coluna 0 (s3 = 0) é o cabeçalho. Não processa.
+    move $a0, $s4    #Argumento a0: Endereço do token (string ASCIIZ).
+    move $a1, $s3    #Argumento a1: Índice da coluna (para saber onde salvar no array).
+    addi $sp, $sp, -4   #Aloca espaço na pilha.
+    sw $ra, 0($sp)    #Salva o endereço de retorno.
+    jal converter_e_salvar_float    #Chama a função auxiliar para converter a string em float e salvar no array.
+    lw $ra, 0($sp)    #Restaura o endereço de retorno.
+    addi $sp, $sp, 4    #Libera o espaço da pilha.
 
 proxima_coluna_logica:
-    addi $s3, $s3, 1
-    addi $s1, $s1, 1  
-    li $t9, 11        
-    bne $s3, $t9, prepara_proximo_token
-    lw $t8, contador_linhas
-    addi $t8, $t8, 1
-    sw $t8, contador_linhas
-    li $s3, 0 
+    addi $s3, $s3, 1    #Incrementa o contador de coluna s3.
+    addi $s1, $s1, 1    #Avança o ponteiro s1 para o caractere depois do delimitador ('\0' que foi inserido).
+    li $t9, 11          #Define o limite de colunas para uma linha (10 colunas + 1 de cabeçalho (0)).
+    bne $s3, $t9, prepara_proximo_token   #Se não for a 11ª coluna (ou seja, se a linha não terminou).
+    lw $t8, contador_linhas   #Se a linha terminou (10 colunas de dados lidas), incrementa o contador de linhas.
+    addi $t8, $t8, 1
+    sw $t8, contador_linhas
+    li $s3, 0   #Reseta o contador de coluna (s3) para 0 (próxima linha).
 
 prepara_proximo_token:
-    move $s4, $s1 
-    j loop_parse
+    move $s4, $s1   #Salva o novo endereço de início do token (s4) (o caractere depois do delimitador).
+    j loop_parse    #Volta para o loop principal para buscar o próximo caractere/token.
 
 fim_leitura_dados:
-    li $v0, 4
-    la $a0, text_ler_sucesso
-    syscall
-    li $v0, 1
-    lw $a0, contador_linhas
-    syscall
-    j iniciar_machine_learning
+    li $v0, 4   #Syscall para imprimir string.
+    la $a0, text_ler_sucesso
+    syscall
+    li $v0, 1   #Syscall para imprimir inteiro.
+    lw $a0, contador_linhas   #Imprime o número total de linhas de dados processadas.
+    syscall
+    j iniciar_machine_learning
 
 # ---------------------------------------------------------
-# FUNÇÃO AUXILIAR: ATOF
+# FUNÇÃO AUXILIAR: ATOF (ASCII to Float)
 # ---------------------------------------------------------
 converter_e_salvar_float:
-    lwc1 $f10, constante_10
-    mtc1 $zero, $f0
-    cvt.s.w $f0, $f0
-    move $t0, $a0
+    lwc1 $f10, constante_10   #Carrega 10.0 em f10 (multiplicador para a conversão de dígitos).
+    mtc1 $zero, $f0   #Move 0 para o coprocessador de ponto flutuante f0.
+    cvt.s.w $f0, $f0    #Converte o inteiro 0 em float 0.0 sendo f0 o acumulador do float.
+    move $t0, $a0   #t0: Ponteiro de leitura da string de entrada (recebido em a0).
 loop_atof:
-    lb $t1, 0($t0)
-    beq $t1, $zero, fim_atof
-    li $t2, 48
-    li $t3, 57
-    blt $t1, $t2, prox_char_atof
-    bgt $t1, $t3, prox_char_atof
-    sub $t1, $t1, $t2 
-    mtc1 $t1, $f1
-    cvt.s.w $f1, $f1
-    mul.s $f0, $f0, $f10
-    add.s $f0, $f0, $f1
+    lb $t1, 0($t0)    #Carrega o caractere (byte) atual.
+    beq $t1, $zero, fim_atof    #Se for '\0' (final da string), termina a conversão.
+    li $t2, 48    #ASCII do caractere '0'.
+    li $t3, 57    #ASCII do caractere '9'.
+    blt $t1, $t2, prox_char_atof    #Se não for um dígito (menor que '0'), pula a conversão.
+    bgt $t1, $t3, prox_char_atof    #Se não for um dígito (maior que '9'), pula a conversão.
+    sub $t1, $t1, $t2   #Converte o caractere do dígito (e.g.: '5') para seu valor inteiro (e.g.: 5).
+    mtc1 $t1, $f1   #Move o valor do dígito para o coprocessador.
+    cvt.s.w $f1, $f1    #Converte o valor inteiro (o dígito) para float.
+    mul.s $f0, $f0, $f10    #Acumulador f0 = Acumulador * 10.0.
+    add.s $f0, $f0, $f1   #Acumulador f0 = Acumulador + Novo Dígito.
 prox_char_atof:
-    addi $t0, $t0, 1
-    j loop_atof
+    addi $t0, $t0, 1    #Avança o ponteiro para o próximo caractere.
+    j loop_atof   #Continua o loop.
 fim_atof:
-    addi $t4, $a1, -1   
-    la $t5, ponteiros_arrays
-    sll $t4, $t4, 2
-    add $t5, $t5, $t4
-    lw $t6, 0($t5)      
-    lw $t7, contador_linhas
-    sll $t7, $t7, 2
-    add $t6, $t6, $t7
-    swc1 $f0, 0($t6)
-    jr $ra
+    # --- Lógica para Salvar o Float no Array ---
+    #A função deve salvar f0 (o valor float convertido) no array de destino.
+    addi $t4, $a1, -1   #t4 = Índice da coluna - 1. (0=Cycle, 1=chI, etc., mas a tabela de ponteiros começa com índice 0).
+    la $t5, ponteiros_arrays    #t5: Endereço da Tabela de Ponteiros.
+    sll $t4, $t4, 2   #t4 = (Índice - 1) * 4 bytes (offset na tabela de ponteiros).
+    add $t5, $t5, $t4   #t5: Endereço do ponteiro (endereço do array) na tabela.
+    lw $t6, 0($t5)      #t6: Carrega o endereço base do Array de destino (e.g.: array_chI).
+    lw $t7, contador_linhas   #t7: Carrega o índice da linha atual.
+    sll $t7, $t7, 2   #t7 = Índice da linha * 4 bytes (offset no array de destino).
+    add $t6, $t6, $t7   #t6: Endereço de destino final (Array Base + Offset da Linha).
+    swc1 $f0, 0($t6)    #Salva o float convertido f0 no endereço final t6.
+    jr $ra   #Retorna ao chamador.
 
 # =================================================================
 # PARTE 3: MACHINE LEARNING (TREINAMENTO COM DATASET)
 # =================================================================
 iniciar_machine_learning:
-    li $v0, 4
-    la $a0, text_inicio_ml
-    syscall
+    li $v0, 4
+    la $a0, text_inicio_ml
+    syscall
 
-    # Split Treino/Teste
-    lw $t0, contador_linhas
-    mtc1 $t0, $f0
-    cvt.s.w $f0, $f0
-    lwc1 $f1, const_0_7
-    mul.s $f0, $f0, $f1
-    cvt.w.s $f0, $f0     
-    mfc1 $t1, $f0        
-    sw $t1, n_treino
-    sub $t2, $t0, $t1
-    sw $t2, n_teste
+    #Split Treino/Teste
+    lw $t0, contador_linhas   #t0: Número total de linhas lidas.
+    mtc1 $t0, $f0   #Move o total de linhas para float.
+    cvt.s.w $f0, $f0
+    lwc1 $f1, const_0_7   #Carrega 0.7 em f1.
+    mul.s $f0, $f0, $f1   #f0 = Total de Linhas * 0.7 (Tamanho do conjunto de Treino).
+    cvt.w.s $f0, $f0    #Converte o resultado de volta para inteiro (truncamento).
+    mfc1 $t1, $f0       #t1: Número de linhas para Treino.
+    sw $t1, n_treino    #Salva n_treino.
+    sub $t2, $t0, $t1   #t2: Número total - n_treino = n_teste.
+    sw $t2, n_teste   #Salva n_teste.
 
-    # Normalização e Cálculo de Parâmetros do Dataset
-    li $s6, 0             
+    # Normalização e Cálculo de Parâmetros do Dataset
+    li $s6, 0          #s6: Índice da coluna.
 loop_normalizacao:
-    li $t9, 9             
-    beq $s6, $t9, inicio_treinamento
-    
-    la $t0, ponteiros_arrays
-    sll $t1, $s6, 2
-    add $t0, $t0, $t1
-    lw $s0, 0($t0)
-    
-    # Calcular Média
-    mtc1 $zero, $f10      
-    lw $t0, contador_linhas
-    li $t1, 0             
+    li $t9, 9          #O loop deve roda 9 vezes para 9 colunas.
+    beq $s6, $t9, inicio_treinamento    #Se todas foram processadas, inicia Treinamento.
+    
+    la $t0, ponteiros_arrays    #t0: Endereço da tabela de ponteiros.
+    sll $t1, $s6, 2   #t1: Offset da coluna atual (Índice * 4).
+    add $t0, $t0, $t1   #t0: Endereço do ponteiro da coluna atual.
+    lw $s0, 0($t0)    #s0: Endereço base do array da coluna atual (e.g.: array_chI).
+    
+    #Calcular Média ($\mu$)
+    mtc1 $zero, $f10    #f10: Acumulador da soma.
+    lw $t0, contador_linhas   #t0: Total de linhas para o loop.
+    li $t1, 0             #t1: Índice da linha.
 loop_media:
-    beq $t1, $t0, fim_media
-    sll $t2, $t1, 2
-    add $t3, $s0, $t2
-    lwc1 $f1, 0($t3)
-    add.s $f10, $f10, $f1
-    addi $t1, $t1, 1
-    j loop_media
+    beq $t1, $t0, fim_media   #Se o índice da linha t1 for igual ao total, sai.
+    sll $t2, $t1, 2   #t2: Offset da linha (Índice * 4).
+    add $t3, $s0, $t2   #t3: Endereço do float atual na coluna.
+    lwc1 $f1, 0($t3)    #f1: Carrega o valor do float.
+    add.s $f10, $f10, $f1   #Soma o valor ao acumulador f10.
+    addi $t1, $t1, 1    #Incrementa o índice da linha.
+    j loop_media
 fim_media:
-    mtc1 $t0, $f2
-    cvt.s.w $f2, $f2
-    div.s $f10, $f10, $f2 
-    
-    # SALVAR MÉDIA (Para usar na predição depois)
-    la $t4, array_medias
-    sll $t5, $s6, 2
-    add $t4, $t4, $t5
-    swc1 $f10, 0($t4)
+    mtc1 $t0, $f2   #Move o total de linhas t0 para float f2.
+    cvt.s.w $f2, $f2
+    div.s $f10, $f10, $f2   #f10 agora contém a média.
+    
+    # SALVAR MÉDIA
+    la $t4, array_medias    #t4: Endereço do array de médias.
+    sll $t5, $s6, 2   #t5: Offset da coluna (Índice * 4).
+    add $t4, $t4, $t5   #t4: Endereço onde a média deve ser salva.
+    swc1 $f10, 0($t4)   #Salva a média.
 
-    # Calcular Std
-    mtc1 $zero, $f11      
-    li $t1, 0
+    # Calcular Desvio Padrão 
+    mtc1 $zero, $f11    #f11: Acumulador para a soma dos quadrados das diferenças.
+    li $t1, 0   #t1: Índice da linha.
 loop_std:
-    beq $t1, $t0, fim_std
-    sll $t2, $t1, 2
-    add $t3, $s0, $t2
-    lwc1 $f1, 0($t3)
-    sub.s $f3, $f1, $f10  
-    mul.s $f3, $f3, $f3   
-    add.s $f11, $f11, $f3
-    addi $t1, $t1, 1
-    j loop_std
+    beq $t1, $t0, fim_std   #Se o loop terminou, sai.
+    sll $t2, $t1, 2   #t2: Offset da linha.
+    add $t3, $s0, $t2   #t3: Endereço do float atual.
+    lwc1 $f1, 0($t3)    #f1: Carrega o valor X.
+    sub.s $f3, $f1, $f10    #f3 = X - mu.
+    mul.s $f3, $f3, $f3   #f3 = (X - mu)^2.
+    add.s $f11, $f11, $f3 # Acumula o quadrado da diferença.
+    addi $t1, $t1, 1
+    j loop_std
 fim_std:
-    div.s $f11, $f11, $f2 
-    sqrt.s $f11, $f11     
-    mtc1 $zero, $f4
-    c.eq.s $f11, $f4
-    bc1f salvar_std
-    lwc1 $f11, const_1_0
+    div.s $f11, $f11, $f2   #f11 = Variância.
+    sqrt.s $f11, $f11       #f11 = sigma.
+    mtc1 $zero, $f4   #Move 0.0 para f4.
+    c.eq.s $f11, $f4    #Verifica se sigma = 0 (o que causa divisão por zero na normalização). 
+    bc1f salvar_std   #Se sigma diferente de 0, vai para salvar.
+    lwc1 $f11, const_1_0    #Se sigma = 0, define sigma = 1.0 (para evitar divisão por zero).
 salvar_std:
-    # SALVAR STD (Para usar na predição depois)
-    la $t4, array_stds
-    sll $t5, $s6, 2
-    add $t4, $t4, $t5
-    swc1 $f11, 0($t4)
+    # SALVAR STD
+    la $t4, array_stds    #t4: Endereço do array de desvios padrão.
+    sll $t5, $s6, 2   #t5: Offset da coluna.
+    add $t4, $t4, $t5   #t4: Endereço onde sigma deve ser salvo.
+    swc1 $f11, 0($t4)   #Salva o Desvio Padrão.
 
 aplicar_norm:
-    # Aplica normalização no Dataset para treinar
-    li $t1, 0
+    #Aplica normalização (Z-Score): X_norm = (X - mu)/sigma$
+    li $t1, 0   #t1: Índice da linha.
 loop_apply:
-    beq $t1, $t0, prox_col_norm
-    sll $t2, $t1, 2
-    add $t3, $s0, $t2
-    lwc1 $f1, 0($t3)
-    sub.s $f1, $f1, $f10
-    div.s $f1, $f1, $f11
-    swc1 $f1, 0($t3)
-    addi $t1, $t1, 1
-    j loop_apply
+    beq $t1, $t0, prox_col_norm   #Se o loop terminou, vai para a próxima coluna.
+    sll $t2, $t1, 2   #t2: Offset da linha.
+    add $t3, $s0, $t2   #t3: Endereço do valor X original.
+    lwc1 $f1, 0($t3)    #f1: Carrega o valor X.
+    sub.s $f1, $f1, $f10    #f1 = X - mu.
+    div.s $f1, $f1, $f11    #f1 = (X - mu) / sigma. f1 agora é o valor normalizado.
+    swc1 $f1, 0($t3)    #Sobrescreve o array original com o valor normalizado.
+    addi $t1, $t1, 1
+    j loop_apply
 
 prox_col_norm:
-    addi $s6, $s6, 1
-    j loop_normalizacao
+    addi $s6, $s6, 1    #Move para a próxima coluna.
+    j loop_normalizacao   #Volta para o loop principal de normalização.
 
-    # Loop de Treinamento (Atualiza W e b)
+    # Loop de Treinamento (Atualiza W e b)
 inicio_treinamento:
-    li $s7, 0               
-    lw $s6, epochs          
+    li $s7, 0              #s7: Contador de Epochs (iterações de treino).
+    lw $s6, epochs         #s6: Número total de Epochs (1000).
 
 loop_epoch:
-    beq $s7, $s6, fim_treino
-    la $t0, grad_W
-    li $t1, 0
-    mtc1 $zero, $f0
+    beq $s7, $s6, fim_treino    #Se s7 == 1000, o treino termina.
+    la $t0, grad_W    #t0: Endereço do array de gradientes de W.
+    li $t1, 0   #t1: Índice de W (0 a 7).
+    mtc1 $zero, $f0   #f0: 0.0 float.
 zerar_grads:
-    beq $t1, 8, zerar_bias
-    sll $t2, $t1, 2
-    add $t3, $t0, $t2
-    swc1 $f0, 0($t3)
-    addi $t1, $t1, 1
-    j zerar_grads
+    beq $t1, 8, zerar_bias    #Se todos os 8 gradientes de W foram zerados, vai para o bias.
+    sll $t2, $t1, 2   #t2: Offset (Índice * 4).
+    add $t3, $t0, $t2   #t3: Endereço do gradiente atual.
+    swc1 $f0, 0($t3)    #Zera o gradiente de W.
+    addi $t1, $t1, 1
+    j zerar_grads
 zerar_bias:
-    swc1 $f0, grad_b
+    swc1 $f0, grad_b    #Zera o gradiente de bias.
 
-    lw $t8, n_treino
-    li $t9, 0               
-loop_linha:
-    beq $t9, $t8, update_pesos
-    lwc1 $f4, b             
-    li $t1, 0               
-loop_dot:
-    beq $t1, 8, calc_erro
-    la $t2, W
-    sll $t3, $t1, 2
-    add $t2, $t2, $t3
-    lwc1 $f5, 0($t2)
-    la $t4, ponteiros_arrays
-    add $t4, $t4, $t3       
-    lw $t4, 0($t4)
-    sll $t5, $t9, 2
-    add $t4, $t4, $t5
-    lwc1 $f6, 0($t4)
-    mul.s $f6, $f6, $f5
-    add.s $f4, $f4, $f6
-    addi $t1, $t1, 1
-    j loop_dot
+    lw $t8, n_treino    #t8: Número de linhas de treino.
+    li $t9, 0              #t9: Índice da linha de treino (0 a n_treino - 1).
+loop_linha:   #Loop que itera sobre todas as linhas do conjunto de treino.
+    beq $t9, $t8, update_pesos # Se todas as linhas de treino foram processadas, atualiza os pesos.
+    lwc1 $f4, b          #f4: Acumulador da Previsão ŷ, inicializado com o Bias b.
+    li $t1, 0            #t1: Índice da Característica (0 a 7).
+loop_dot:   #Loop que calcula o Produto Escalar: W * X.
+    beq $t1, 8, calc_erro   #Se todas as 8 características foram processadas, calcula o erro.
+    la $t2, W   #t2: Endereço do array de Pesos W.
+    sll $t3, $t1, 2   #t3: Offset do Peso atual.
+    add $t2, $t2, $t3   #t2: Endereço do Peso W[i].
+    lwc1 $f5, 0($t2)    #f5: Carrega o Peso W[i].
+    la $t4, ponteiros_arrays    #t4: Endereço da Tabela de Ponteiros.
+    add $t4, $t4, $t3      #t4: Endereço do ponteiro da Coluna X[i].
+    lw $t4, 0($t4)    #t4: Endereço base do array X[i].
+    sll $t5, $t9, 2   #t5: Offset da Linha atual.
+    add $t4, $t4, $t5   #t4: Endereço do Valor X[i] na linha atual.
+    lwc1 $f6, 0($t4)    #t6: Carrega o Valor X[i] (Normalizado).
+    mul.s $f6, $f6, $f5   #f6 = W[i] * X[i].
+    add.s $f4, $f4, $f6   #f4 = ŷ = b + W[i] . X[i].
+    addi $t1, $t1, 1    #Próxima característica.
+    j loop_dot
 calc_erro:
-    la $t4, ponteiros_arrays
-    lw $t4, 32($t4) 
-    sll $t5, $t9, 2
-    add $t4, $t4, $t5
-    lwc1 $f7, 0($t4)
-    sub.s $f8, $f4, $f7 
-    lwc1 $f10, grad_b
-    add.s $f10, $f10, $f8
-    swc1 $f10, grad_b
-    li $t1, 0
-loop_grad:
-    beq $t1, 8, prox_linha
-    la $t4, ponteiros_arrays
-    sll $t3, $t1, 2
-    add $t4, $t4, $t3
-    lw $t4, 0($t4)
-    sll $t5, $t9, 2
-    add $t4, $t4, $t5
-    lwc1 $f6, 0($t4)
-    mul.s $f6, $f6, $f8     
-    la $t2, grad_W
-    sll $t3, $t1, 2
-    add $t2, $t2, $t3
-    lwc1 $f9, 0($t2)
-    add.s $f9, $f9, $f6
-    swc1 $f9, 0($t2)
-    addi $t1, $t1, 1
-    j loop_grad
+    la $t4, ponteiros_arrays    #t4: Endereço da Tabela de Ponteiros.
+    lw $t4, 32($t4)   #t4: Endereço base do array SOH.
+    sll $t5, $t9, 2   #t5: Offset da Linha.
+    add $t4, $t4, $t5   #t4: Endereço do valor y (SOH real).
+    lwc1 $f7, 0($t4)    #f7: Carrega o valor y (SOH real, normalizado).
+    sub.s $f8, $f4, $f7   #f8: Erro ŷ - y. 
+    lwc1 $f10, grad_b   #f10: Carrega o gradiente acumulado do Bias.
+    add.s $f10, $f10, $f8   #Acumula o gradiente do Bias: grad_b += Erro.
+    swc1 $f10, grad_b   #Salva o gradiente acumulado.
+    li $t1, 0   #t1: Índice da Característica.
+loop_grad:    #Loop para calcular e acumular os Gradientes de W.
+    beq $t1, 8, prox_linha    #Se todos os 8 gradientes foram processados, vai para a próxima linha de treino.
+    la $t4, ponteiros_arrays    #t4: Endereço da Tabela de Ponteiros.
+    sll $t3, $t1, 2   #t3: Offset do array X[i].
+    add $t4, $t4, $t3   #t4: Endereço do ponteiro X[i].
+    lw $t4, 0($t4)    #t4: Endereço base do array X[i].
+    sll $t5, $t9, 2   #t5: Offset da Linha.
+    add $t4, $t4, $t5   #t4: Endereço do valor X[i] na linha atual.
+    lwc1 $f6, 0($t4)    #f6: Carrega o valor X[i].
+    mul.s $f6, $f6, $f8    #f6 = X[i] * Erro. (Gradiente para W[i]).
+    la $t2, grad_W    #t2: Endereço do gradiente de W.
+    sll $t3, $t1, 2   #t3: Offset do gradiente W[i].
+    add $t2, $t2, $t3   #t2: Endereço do gradiente W[i].
+    lwc1 $f9, 0($t2)    #f9: Carrega o gradiente acumulado atual.
+    add.s $f9, $f9, $f6   #Acumula o gradiente: grad_W[i] += X[i] * Erro.
+    swc1 $f9, 0($t2)    #Salva o gradiente acumulado.
+    addi $t1, $t1, 1
+    j loop_grad
 prox_linha:
-    addi $t9, $t9, 1
-    j loop_linha
-update_pesos:
-    lwc1 $f1, learning_rate
-    lw $t0, n_treino
-    mtc1 $t0, $f2
-    cvt.s.w $f2, $f2
-    div.s $f1, $f1, $f2
-    lwc1 $f3, b
-    lwc1 $f4, grad_b
-    mul.s $f4, $f4, $f1
-    sub.s $f3, $f3, $f4
-    swc1 $f3, b
-    li $t1, 0
+    addi $t9, $t9, 1    #Próxima linha de treino.
+    j loop_linha
+update_pesos:   #Aplica a Descida de Gradiente (atualiza W e b)
+    lwc1 $f1, learning_rate   #f1: Taxa de Aprendizado (alpha).
+    lw $t0, n_treino    #t0: Número de exemplos de treino (N).
+    mtc1 $t0, $f2   #Move N para float.
+    cvt.s.w $f2, $f2
+    div.s $f1, $f1, $f2   #f1 = alpha / N (Normaliza a taxa de aprendizado pela contagem de amostras).
+    #Atualização do Bias (b)
+    lwc1 $f3, b   #f3: Bias (b).
+    lwc1 $f4, grad_b    #f4: Gradiente acumulado de b.
+    mul.s $f4, $f4, $f1   #f4 = Gradiente * alpha / N.
+    sub.s $f3, $f3, $f4   #b_novo = b_velho - alpha / N * Gradiente.
+    swc1 $f3, b   #Salva o novo Bias.
+    # Atualização dos Pesos (W)
+    li $t1, 0   #t1: Índice do Peso.
 loop_update:
-    beq $t1, 8, prox_epoch
-    la $t2, W
-    sll $t3, $t1, 2
-    add $t2, $t2, $t3
-    lwc1 $f3, 0($t2) 
-    la $t4, grad_W
-    add $t4, $t4, $t3
-    lwc1 $f5, 0($t4) 
-    mul.s $f5, $f5, $f1
-    sub.s $f3, $f3, $f5
-    swc1 $f3, 0($t2)
-    addi $t1, $t1, 1
-    j loop_update
+    beq $t1, 8, prox_epoch    #Se todos os 8 pesos foram atualizados, vai para o próximo epoch.
+    la $t2, W   #t2: Endereço do array de Pesos.
+    sll $t3, $t1, 2   #t3: Offset do Peso.
+    add $t2, $t2, $t3   #t2: Endereço do Peso W[i].
+    lwc1 $f3, 0($t2)    #f3: Peso W[i].
+    la $t4, grad_W    #t4: Endereço do array de Gradientes.
+    add $t4, $t4, $t3   #t4: Endereço do Gradiente W[i].
+    lwc1 $f5, 0($t4)    #f5: Gradiente W[i] acumulado.
+    mul.s $f5, $f5, $f1   #f5 = Gradiente * (alpha / N).
+    sub.s $f3, $f3, $f5   #W_novo[i] = W_velho[i] - (alpha / N) * Gradiente.
+    swc1 $f3, 0($t2)    #Salva o novo Peso.
+    addi $t1, $t1, 1
+    j loop_update
 prox_epoch:
-    addi $s7, $s7, 1
-    j loop_epoch
+    addi $s7, $s7, 1    #Incrementa o contador de epoch.
+    j loop_epoch    #Próximo epoch.
 
 fim_treino:
 
-    # 4. TESTE (MSE)
-    mtc1 $zero, $f20        
-    lw $t9, n_treino        
-    lw $t0, contador_linhas
-loop_teste:
-    beq $t9, $t0, fim_calculo_teste
-    lwc1 $f4, b
-    li $t1, 0
-loop_dot_test:
-    beq $t1, 8, calc_erro_test
-    la $t2, W
-    sll $t3, $t1, 2
-    add $t2, $t2, $t3
-    lwc1 $f5, 0($t2)
-    la $t4, ponteiros_arrays
-    add $t4, $t4, $t3
-    lw $t4, 0($t4)
-    sll $t5, $t9, 2
-    add $t4, $t4, $t5
-    lwc1 $f6, 0($t4)
-    mul.s $f6, $f6, $f5
-    add.s $f4, $f4, $f6
-    addi $t1, $t1, 1
-    j loop_dot_test
+    # 4. TESTE (MSE - Mean Squared Error)
+    mtc1 $zero, $f20      #f20: Acumulador da Soma dos Erros Quadráticos (ŷ - y)^2.
+    lw $t9, n_treino      #t9: Índice inicial do conjunto de Teste (igual ao n_treino).
+    lw $t0, contador_linhas   #t0: Limite final (Total de Linhas).
+loop_teste:   #Loop que itera sobre as linhas do conjunto de Teste.
+    beq $t9, $t0, fim_calculo_teste   #Se o índice atingir o total, termina o teste.
+    lwc1 $f4, b   #f4: Acumulador da Previsão ŷ, inicializado com b.
+    li $t1, 0   #t1: Índice da Característica.
+loop_dot_test:    #Cálculo da Previsão (ŷ = W * X + b) para o conjunto de teste.
+    beq $t1, 8, calc_erro_test
+    la $t2, W
+    sll $t3, $t1, 2
+    add $t2, $t2, $t3
+    lwc1 $f5, 0($t2)    #f5: Peso W[i].
+    la $t4, ponteiros_arrays
+    add $t4, $t4, $t3
+    lw $t4, 0($t4)
+    sll $t5, $t9, 2
+    add $t4, $t4, $t5
+    lwc1 $f6, 0($t4)    #f6: Valor X[i] (do conjunto de teste).
+    mul.s $f6, $f6, $f5   #W[i] * X[i].
+    add.s $f4, $f4, $f6   #Acumula na previsão ŷ.
+    addi $t1, $t1, 1
+    j loop_dot_test
 calc_erro_test:
-    la $t4, ponteiros_arrays
-    lw $t4, 32($t4)
-    sll $t5, $t9, 2
-    add $t4, $t4, $t5
-    lwc1 $f7, 0($t4)
-    sub.s $f8, $f4, $f7     
-    mul.s $f8, $f8, $f8     
-    add.s $f20, $f20, $f8   
-    addi $t9, $t9, 1
-    j loop_teste
+    la $t4, ponteiros_arrays
+    lw $t4, 32($t4)   #t4: Endereço base do array SOH (y).
+    sll $t5, $t9, 2
+    add $t4, $t4, $t5
+    lwc1 $f7, 0($t4)      #f7: Valor y (SOH real, normalizado).
+    sub.s $f8, $f4, $f7    #f8: Erro (ŷ - y).
+    mul.s $f8, $f8, $f8     #f8: Erro Quadrático (Erro^2).
+    add.s $f20, $f20, $f8   #Acumula na Soma dos Erros Quadráticos.
+    addi $t9, $t9, 1
+    j loop_teste
 fim_calculo_teste:
-    lw $t0, n_teste
-    mtc1 $t0, $f2
-    cvt.s.w $f2, $f2
-    lwc1 $f3, const_2_0
-    mul.s $f2, $f2, $f3
-    div.s $f12, $f20, $f2   
-    li $v0, 4
-    la $a0, text_resultado
-    syscall
-    li $v0, 2               
-    syscall
+    lw $t0, n_teste   #t0: Número de amostras de teste.
+    mtc1 $t0, $f2   #Move n_teste para float.
+    cvt.s.w $f2, $f2
+    lwc1 $f3, const_2_0   #Carrega 2.0 (const_2_0).
+    mul.s $f2, $f2, $f3   #f2 = 2 * N_teste.
+    div.s $f12, $f20, $f2  #f12 = Somatório (Erro)^2/2 * N_teste. (Calcula o Mean Squared Error).
+    li $v0, 4
+    la $a0, text_resultado
+    syscall
+    li $v0, 2   #Syscall para imprimir float.
+    syscall   #Imprime o MSE.
 
 # =================================================================
 # PARTE 5: IMPRESSÃO DOS PESOS APRENDIDOS
 # =================================================================
 print_parametros_finais:
-    li $v0, 4
-    la $a0, text_pesos_titulo
-    syscall
-    li $v0, 4
-    la $a0, text_bias
-    syscall
-    lwc1 $f12, b       
-    li $v0, 2          
-    syscall
-    li $v0, 4
-    la $a0, quebra_linha
-    syscall
-    li $v0, 4
-    la $a0, text_w_titulo
-    syscall
-    li $t0, 0          
-    li $t1, 8          
+    li $v0, 4
+    la $a0, text_pesos_titulo
+    syscall
+    li $v0, 4
+    la $a0, text_bias
+    syscall
+    lwc1 $f12, b      #Carrega o Bias (b) final.
+    li $v0, 2           #Syscall para imprimir float.
+    syscall
+    li $v0, 4
+    la $a0, quebra_linha
+    syscall
+    li $v0, 4
+    la $a0, text_w_titulo
+    syscall
+    li $t0, 0        #t0: Contador do Peso W[i].
+    li $t1, 8        #Limite (8 pesos).
 loop_print_w:
-    beq $t0, $t1, input_usuario
-    li $v0, 4
-    la $a0, text_w_prefix
-    syscall
-    li $v0, 1
-    move $a0, $t0
-    syscall
-    li $v0, 4
-    la $a0, text_w_suffix
-    syscall
-    la $t2, W          
-    sll $t3, $t0, 2    
-    add $t2, $t2, $t3  
-    lwc1 $f12, 0($t2)  
-    li $v0, 2
-    syscall
-    li $v0, 4
-    la $a0, quebra_linha
-    syscall
-    addi $t0, $t0, 1   
-    j loop_print_w
+    beq $t0, $t1, input_usuario   #Se todos os 8 pesos foram impressos, vai para a interação com o usuário.
+    li $v0, 4
+    la $a0, text_w_prefix
+    syscall
+    li $v0, 1   #Imprime inteiro.
+    move $a0, $t0   #Imprime o índice i do peso.
+    syscall
+    li $v0, 4
+    la $a0, text_w_suffix
+    syscall
+    la $t2, W           #t2: Endereço do array W.
+    sll $t3, $t0, 2     #t3: Offset do Peso.
+    add $t2, $t2, $t3   #$t2: Endereço do Peso W[i].
+    lwc1 $f12, 0($t2)   #Carrega o Peso W[i] final.
+    li $v0, 2   #Imprime float.
+    syscall
+    li $v0, 4
+    la $a0, quebra_linha
+    syscall
+    addi $t0, $t0, 1   
+    j loop_print_w
 
 # =================================================================
 # PARTE 6: INTERAÇÃO COM USUÁRIO (APENAS PREDIÇÃO - SEM TREINO)
 # =================================================================
-input_usuario:
-    li $v0, 4
-    la $a0, text_menu_input
-    syscall
-    
-    # 1. Acumulador = Bias (Já aprendemos, é fixo)
-    lwc1 $f12, b 
-    
-    li $t0, 0          # Índice Característica
-    li $t1, 8          # Total
+input_usuario:    #Loop de predição manual.
+    li $v0, 4
+    la $a0, text_menu_input
+    syscall
+    
+    #1. Acumulador = Bias.
+    lwc1 $f12, b    #f12: Acumulador da Previsão (ŷ_final), começa com o Bias (b).
+    
+    li $t0, 0          #t0: Índice da Característica a ser solicitada.
+    li $t1, 8          #Total de características = 8.
 
 loop_inputs:
-    beq $t0, $t1, mostrar_resultado_usuario
-    
-    # Imprimir Pergunta
-    la $t2, prompts_usuario
-    sll $t3, $t0, 2
-    add $t2, $t2, $t3
-    lw $a0, 0($t2)     
-    li $v0, 4
-    syscall
-    
-    # Ler Float do Usuário
-    li $v0, 6
-    syscall            # Valor em $f0
-    
-    # -----------------------------------------------------
-    # CONVERSÃO DE UNIDADE (NORMALIZAÇÃO MANUAL)
-    # NÃO É TREINO! Apenas transformamos o dado do usuário
-    # para a mesma "moeda" que o modelo conhece.
-    # Fórmula: (ValorUsuario - MediaTreino) / DesvioTreino
-    # -----------------------------------------------------
-    
-    # Carregar Média do Dataset (Fixo)
-    la $t4, array_medias
-    add $t4, $t4, $t3  
-    lwc1 $f1, 0($t4)
-    
-    # Carregar Std do Dataset (Fixo)
-    la $t4, array_stds
-    add $t4, $t4, $t3
-    lwc1 $f2, 0($t4)
-    
-    sub.s $f0, $f0, $f1  # (X - mu)
-    div.s $f0, $f0, $f2  # / sigma
-    
-    # Multiplicar pelo Peso Aprendido: W[$t0] * X_norm
-    la $t4, W
-    add $t4, $t4, $t3
-    lwc1 $f3, 0($t4)
-    
-    mul.s $f0, $f0, $f3  # W * X
-    add.s $f12, $f12, $f0 # Acumula na previsão
-    
-    addi $t0, $t0, 1
-    j loop_inputs
+    beq $t0, $t1, mostrar_resultado_usuario   #Se todas as características foram lidas, mostra resultado.
+    
+    #Imprimir Pergunta
+    la $t2, prompts_usuario
+    sll $t3, $t0, 2
+    add $t2, $t2, $t3
+    lw $a0, 0($t2)      #a0: Endereço da string de prompt.
+    li $v0, 4
+    syscall
+    
+    # Ler Float do Usuário
+    li $v0, 6
+    syscall            #O valor de entrada é retornado em f0.
+    
+    # --- NORMALIZAÇÃO MANUAL ---
+    #t3 ainda contém o Offset do índice (t0 * 4).
+    
+    # Carregar Média do Dataset (mu)
+    la $t4, array_medias
+    add $t4, $t4, $t3  
+    lwc1 $f1, 0($t4)    #f1: Média (mu).
+    
+    #Carregar Std do Dataset (sigma)
+    la $t4, array_stds
+    add $t4, $t4, $t3
+    lwc1 $f2, 0($t4)    #f2: Desvio Padrão (sigma).
+    
+    sub.s $f0, $f0, $f1   #f0 = (X_usuario - mu).
+    div.s $f0, $f0, $f2   #f0 = (X - mu) / sigma (Normalizado).
+    
+    # Multiplicar pelo Peso Aprendido: W[t0] * X_norm
+    la $t4, W
+    add $t4, $t4, $t3
+    lwc1 $f3, 0($t4)    #f3: Peso W[i] aprendido.
+    
+    mul.s $f0, $f0, $f3   #f0 = W[i] * X_norm.
+    add.s $f12, $f12, $f0   #f12 += W[i] * X_norm. (Acumula na Previsão).
+    
+    addi $t0, $t0, 1    #Próxima característica.
+    j loop_inputs
 
 mostrar_resultado_usuario:
-    # O resultado em $f12 está "Normalizado" (escala reduzida).
-    # Precisamos converter de volta para SOH real.
-    # SOH_real = (Resultado_Norm * Std_SOH) + Media_SOH
-    
-    # Carrega Media SOH (Índice 8)
-    la $t4, array_medias
-    lwc1 $f1, 32($t4)    
-    
-    # Carrega Std SOH (Índice 8)
-    la $t4, array_stds
-    lwc1 $f2, 32($t4)
-    
-    mul.s $f12, $f12, $f2  # Desfaz divisão
-    add.s $f12, $f12, $f1  # Desfaz subtração
-    
-    # Print Resultado
-    li $v0, 4
-    la $a0, text_soh_final
-    syscall
-    
-    li $v0, 2
-    syscall
-    
-    # Repetir?
-    li $v0, 4
-    la $a0, text_continuar
-    syscall
-    
-    li $v0, 5    
-    syscall
-    move $t9, $v0
-    
-    bne $t9, $zero, input_usuario 
+    # --- DESNORMALIZAÇÃO DO RESULTADO ---
+    # A previsão em f12 é o SOH normalizado. Para revertê-la:
+    # SOH_real = SOH_norm * sigma_SOH + mu_SOH
+    
+    # Carrega Media SOH (Índice 8)
+    la $t4, array_medias
+    lwc1 $f1, 32($t4)     #32 é o offset para o 9º float (índice 8). f1: mu_SOH$.
+    
+    # Carrega Std SOH (Índice 8)
+    la $t4, array_stds
+    lwc1 $f2, 32($t4)   #f2: sigma_SOH$.
+    
+    mul.s $f12, $f12, $f2   #f12 = SOH_norm * sigma_SOH.
+    add.s $f12, $f12, $f1     #f12 = SOH_norm * sigma_SOH + mu_SOH. (SOH Real).
+    
+    # Print Resultado
+    li $v0, 4
+    la $a0, text_soh_final
+    syscall
+    
+    li $v0, 2
+    syscall   #Imprime o SOH Estimado.
+    
+    #Repetir?
+    li $v0, 4
+    la $a0, text_continuar
+    syscall
+    
+    li $v0, 5     #Syscall para ler inteiro.
+    syscall
+    move $t9, $v0   #t9: Recebe a escolha do usuário (1=Sim, 0=Não).
+    
+    bne $t9, $zero, input_usuario   #Se a escolha for 1, volta para o loop de entrada.
 
 end_program:
-    li $v0, 10
-    syscall
+    li $v0, 10    #Syscall de encerramento.
+    syscall
 
 erro_abertura:
-    li $v0, 4
-    la $a0, text_abrir_falha
-    syscall
-    li $v0, 10
-    syscall
+    li $v0, 4
+    la $a0, text_abrir_falha
+    syscall
+    li $v0, 10
+    syscall
 
 exit:
-    li $v0, 10
-    syscall
+    li $v0, 10
+    syscall
