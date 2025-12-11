@@ -2,17 +2,19 @@
 # =================================================================
 # CONFIGURAÇÃO DO ARQUIVO
 # =================================================================
-nome_arquivo: .asciiz "C:\\AOC\\TRABALHO AOC\\batteryDataset.csv" 
+nome_arquivo: .asciiz "C:\\AOC\\TRABALHO AOC\\batteryDataset.csv"   #Endereço do dataset.
 
 # Buffer de Leitura (150kb)
-buffer: .space 150000  
+buffer: .space 150000   #Memória RAM reservada pro buffer.
 
 # =================================================================
 # CONSTANTES E TEXTOS
 # =================================================================
+# Mensagens de status para as fases de leitura e parsing do arquivo:
 text_abrir_sucesso: .asciiz "Arquivo aberto com sucesso!\nLendo e processando dados...\n"
 text_abrir_falha: .asciiz "ERRO: Falha ao abrir arquivo. Verifique se o caminho esta correto no codigo.\n"
 text_ler_sucesso: .asciiz "\n--- Leitura Concluida ---\nLinhas processadas: "
+# Mensagens para marcar início do treinamento e a exibição do erro final.
 text_inicio_ml:   .asciiz "\n\n--- Iniciando Treinamento com DATASET (Usuario nao interfere aqui) ---\n"
 text_resultado:   .asciiz "\n--- Treino Finalizado ---\nErro Medio Quadratico (MSE) no Teste: "
 
@@ -43,16 +45,16 @@ prompts_usuario:
     .word prompt_cycle, prompt_chI, prompt_chV, prompt_chT, prompt_disI, prompt_disV, prompt_disT, prompt_BCt
 
 # Variáveis de Controle
-contador_linhas: .word 0 
-constante_10:    .float 10.0
+contador_linhas: .word 0    #Total de linhas de dados.
+constante_10:    .float 10.0    #Constante de conversão de String para Float.
 
 # Constantes Matemáticas
-const_0_7:     .float 0.7    
-const_1_0:     .float 1.0    
+const_0_7:     .float 0.7   #Constante usada para split dos dados Treino/Teste.
+const_1_0:     .float 1.0    
 const_0_0:     .float 0.0    
 const_2_0:     .float 2.0    
-learning_rate: .float 0.01   
-epochs:        .word 1000    
+learning_rate: .float 0.01  #Taxa de aprendizado alpha do gradiente descendente. 
+epochs:        .word 1000   #Número de iterações de treinamento.
 
 # =================================================================
 # ARRAYS DE DADOS (ALINHADOS)
@@ -60,6 +62,7 @@ epochs:        .word 1000    
 .align 2  
 
 # Arrays (1000 linhas x 4 bytes)
+# Arrays para variáveis:
 array_cycle: .space 4000 
 array_chI:   .space 4000
 array_chV:   .space 4000
@@ -68,10 +71,11 @@ array_disI:  .space 4000
 array_disV:  .space 4000
 array_disT:  .space 4000
 array_BCt:   .space 4000
-array_SOH:   .space 4000
+# Arrays para variáveis de saída:
+array_SOH:   .space 4000  
 array_RUL:   .space 4000 
 
-# Tabela de ponteiros
+# Tabela de ponteiros ====> Armazena os endereços bases dos arrays de dados.
 .align 2
 ponteiros_arrays:
     .word array_cycle 
@@ -90,19 +94,19 @@ ponteiros_arrays:
 # =================================================================
 .align 2
 # Pesos (W) e Bias (b) - Estes serão modificados APENAS no treino
-W:          .float 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
-b:          .float 0.5       
+W:          .float 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5   #Pesos iniciais do modelo para cada característica de entrada.
+b:          .float 0.5      #Bias (b) inicial.
 
-# Gradientes (Usados só no treino)
+# Gradientes (Usados só no treino) - Acumulam o erro durante loop de treino.
 grad_W:     .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 grad_b:     .float 0.0
 
 # Médias e Desvios Padrão do DATASET (Usados como referência fixa para o usuário)
-array_medias: .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 
-array_stds:   .float 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 
+array_medias: .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0    #Armazenará a média de cada coluna após a fase de normalização.
+array_stds:   .float 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0    #Armazenará o desvio padrão.
 
-# Controle
-n_treino:   .word 0
+# Controle - Armazenam as contagens de linhas de treino e de teste respectivamente.
+n_treino:   .word 0 
 n_teste:    .word 0
 
 .text
@@ -112,18 +116,27 @@ main:
     # ---------------------------------------------------------
     # PARTE 1: LER DATASET
     # ---------------------------------------------------------
+    # VISÃO GERAL DO BLOCO: Este bloco inicial é responsável pela abertura do arquivo CSV usando Syscall 13,
+    # lê todo o seu conteúdo para o 'buffer' (Syscall 14) e fecha o arquivo (Syscall 16). 
+    # O resultado da leitura é transformado
+    # em uma string ASCIIZ.
+    
+
+    #1.1: Abertura do arquivo do dataset:
     li $v0, 13  #Syscall 13 abre o arquivo com configurações especificadas em a0, a1, a2.
     la $a0, nome_arquivo  #a0: Nome do arquivo.
     li $a1, 0   #a1: Read-Only.
     li $a2, 0   #a2: Modo (ignorável).
     syscall
-    move $s0, $v0   #Retorna em v0 um descritor de arquivo que é movido para s0.
-    blt $s0, 0, erro_abertura   #Caso tenha havido erro na abertura do arquivo, s0 retorna como -1 que nesse caso provoca uma mensagem de erro.
+    move $s0, $v0     #Retorna em v0 um descritor de arquivo que é movido para s0.
+    blt $s0, 0, erro_abertura     #Caso tenha havido erro na abertura do arquivo, s0 retorna como -1 que nesse caso provoca uma mensagem de erro.
     
+    #1.2: Alert de sucesso na abertura do arquivo.
     li $v0, 4   #Caso não tenha havido erro na abertura, printa a mensagem de sucesso.
     la $a0, text_abrir_sucesso
     syscall
     
+    #1.3: Leitura do arquivo do dataset:
     li $v0, 14    #Syscall de leitura de arquivo, recebe por configuração a0, a1 e a2.
     move $a0, $s0   #a0: Descritor do arquivo a ser lido.
     la $a1, buffer    #a1: Endereço do buffer onde os dados lidos serão armazenados.
@@ -131,12 +144,14 @@ main:
     syscall
     move $s2, $v0   #Retorna o número total de bytes lidos.
     
+    #1.4: Fechamento do arquivo:
     li $v0, 16      #Syscall de fechar arquivo.
     move $a0, $s0   #Descritor do arquivo a ser fechado.
     syscall
     
     beq $s2, $zero, exit  #Se não leu nenhum byte, exit.
     
+    #1.5: Conversão dos buffer de leitura em String ASCIIZ:
     la $t0, buffer    #Carrega em t0 o endereço do buffer.
     add $t0, $t0, $s2   #Desloca para o final do buffer.
     sb $zero, 0($t0)    #Adiciona \0 ao final do buffer, convertendo-o em uma string ASCIIZ.
@@ -144,10 +159,18 @@ main:
     # ---------------------------------------------------------
     # PARTE 2: PARSE (Dataset -> Memória)
     # ---------------------------------------------------------
+    # VISÃO GERAL DO BLOCO: Esta seção faz o 'parsing' do conteúdo do buffer.
+    # Ele itera caractere por caractere (tokenização),
+    # identifica delimitadores (vírgula e \n) e chama a rotina
+    # 'converter_e_salvar_float' para transformar cada string de dígito (token)
+    # em seu valor de ponto flutuante e armazená-lo nos arrays dedicados na memória.
+    
+    #2.1: Definições para varredura:
     la $s1, buffer    #Define o ponteiro para varredura.
     add $s5, $s1, $s2     #Define o limite da varredura.
     li $s3, 0     #Inicializa o contador de coluna.
 
+    #2.2: Pula cabeçalho - Ignora a linha "battery_id,cycle,chI,chV,chT,disI,disV,disT,BCt,SOH,RUL".
 pular_cabecalho:
     lb $t0, 0($s1)    #Carrega em t0 o byte apontado por s1.
     addi $s1, $s1, 1    #Incrementa s1 em 1.
@@ -159,9 +182,10 @@ inicio_linha_dados:
     li $s3, 0          #Reseta o contador de coluna s3 para 0.
     move $s4, $s1      #Salva o endereço de onde o token atual começa. $s1 aponta para o 1º caractere do token.
 
+    #2.3: Fatia o conteúdo do buffer em valores.
 loop_parse:
     bge $s1, $s5, fim_leitura_dados #Condição de Parada: Se o ponteiro s1 atingir o limite s5, sai do loop.
-    lb $t0, 0($s1) #Carrega o caractere atual t0 apontado por $s1.
+    lb $t0, 0($s1) #Carrega o caractere atual t0 apontado porgg $s1.
     beq $t0, 44, achou_token    #Se o caractere for '44' (vírgula - ','), fim de um campo/token.
     beq $t0, 10, achou_token    #Se o caractere for '10' (Line Feed - '\n'), fim de uma linha e de um token.
     beq $t0, 13, pular_char     #Se o caractere for '13' (Carriage Return - '\r'), comum em Windows, pula.
@@ -185,6 +209,7 @@ achou_token:
     lw $ra, 0($sp)    #Restaura o endereço de retorno.
     addi $sp, $sp, 4    #Libera o espaço da pilha.
 
+    #2.4: Vai para a próxima coluna.
 proxima_coluna_logica:
     addi $s3, $s3, 1    #Incrementa o contador de coluna s3.
     addi $s1, $s1, 1    #Avança o ponteiro s1 para o caractere depois do delimitador ('\0' que foi inserido).
@@ -211,6 +236,12 @@ fim_leitura_dados:
 # ---------------------------------------------------------
 # FUNÇÃO AUXILIAR: ATOF (ASCII to Float)
 # ---------------------------------------------------------
+# # VISÃO GERAL DO BLOCO: Implementa a lógica da conversão de string para ponto flutuante
+# (ASCII to Float). Ele itera sobre os dígitos do token, multiplicando o acumulador
+# por 10.0 e adicionando o valor do novo dígito (f0 = f0 * 10.0 + f1).
+# Após a conversão, ele calcula o endereço correto no array de destino usando
+# a 'ponteiros_arrays' e o 'contador_linhas' e salva o valor.
+
 converter_e_salvar_float:
     lwc1 $f10, constante_10   #Carrega 10.0 em f10 (multiplicador para a conversão de dígitos).
     mtc1 $zero, $f0   #Move 0 para o coprocessador de ponto flutuante f0.
@@ -248,12 +279,20 @@ fim_atof:
 # =================================================================
 # PARTE 3: MACHINE LEARNING (TREINAMENTO COM DATASET)
 # =================================================================
+    # VISÃO GERAL DO BLOCO: Fase de pré-processamento e treinamento do modelo.
+    # O bloco: 
+    # 1) Faz o Split Treino/Teste (70/30). 
+    # 2) Calcula Média (mu) e Desvio Padrão (sigma) para cada coluna. 
+    # 3) Aplica a Normalização Z-Score (X_norm = (X - mu)/sigma)
+    # em todo o dataset.
+
+    #3.1: Alert de início do machine learning:
 iniciar_machine_learning:
     li $v0, 4
     la $a0, text_inicio_ml
     syscall
 
-    #Split Treino/Teste
+    #3.2: Split Treino/Teste - Divide os dados em conjuntos de treinos e testes.
     lw $t0, contador_linhas   #t0: Número total de linhas lidas.
     mtc1 $t0, $f0   #Move o total de linhas para float.
     cvt.s.w $f0, $f0
@@ -265,7 +304,7 @@ iniciar_machine_learning:
     sub $t2, $t0, $t1   #t2: Número total - n_treino = n_teste.
     sw $t2, n_teste   #Salva n_teste.
 
-    # Normalização e Cálculo de Parâmetros do Dataset
+    #3.3: Normalização e Cálculo de Parâmetros do Dataset
     li $s6, 0          #s6: Índice da coluna.
 loop_normalizacao:
     li $t9, 9          #O loop deve roda 9 vezes para 9 colunas.
@@ -276,7 +315,7 @@ loop_normalizacao:
     add $t0, $t0, $t1   #t0: Endereço do ponteiro da coluna atual.
     lw $s0, 0($t0)    #s0: Endereço base do array da coluna atual (e.g.: array_chI).
     
-    #Calcular Média ($\mu$)
+    #3.4: Calculo da Média (mu).
     mtc1 $zero, $f10    #f10: Acumulador da soma.
     lw $t0, contador_linhas   #t0: Total de linhas para o loop.
     li $t1, 0             #t1: Índice da linha.
@@ -293,13 +332,13 @@ fim_media:
     cvt.s.w $f2, $f2
     div.s $f10, $f10, $f2   #f10 agora contém a média.
     
-    # SALVAR MÉDIA
+    #3.5: Armazenamento da Média. 
     la $t4, array_medias    #t4: Endereço do array de médias.
     sll $t5, $s6, 2   #t5: Offset da coluna (Índice * 4).
     add $t4, $t4, $t5   #t4: Endereço onde a média deve ser salva.
     swc1 $f10, 0($t4)   #Salva a média.
 
-    # Calcular Desvio Padrão 
+    #3.6: Calculo do Desvio Padrão (sigma).
     mtc1 $zero, $f11    #f11: Acumulador para a soma dos quadrados das diferenças.
     li $t1, 0   #t1: Índice da linha.
 loop_std:
@@ -320,14 +359,16 @@ fim_std:
     bc1f salvar_std   #Se sigma diferente de 0, vai para salvar.
     lwc1 $f11, const_1_0    #Se sigma = 0, define sigma = 1.0 (para evitar divisão por zero).
 salvar_std:
-    # SALVAR STD
+
+    #3.7: Armazenamento do STD:
     la $t4, array_stds    #t4: Endereço do array de desvios padrão.
     sll $t5, $s6, 2   #t5: Offset da coluna.
     add $t4, $t4, $t5   #t4: Endereço onde sigma deve ser salvo.
     swc1 $f11, 0($t4)   #Salva o Desvio Padrão.
 
+    #3.8: Normalização:
 aplicar_norm:
-    #Aplica normalização (Z-Score): X_norm = (X - mu)/sigma$
+    #Aplica normalização (Z-Score): X_norm = (X - mu)/sigma
     li $t1, 0   #t1: Índice da linha.
 loop_apply:
     beq $t1, $t0, prox_col_norm   #Se o loop terminou, vai para a próxima coluna.
@@ -349,6 +390,7 @@ inicio_treinamento:
     li $s7, 0              #s7: Contador de Epochs (iterações de treino).
     lw $s6, epochs         #s6: Número total de Epochs (1000).
 
+    #3.9: Itera treinamento.
 loop_epoch:
     beq $s7, $s6, fim_treino    #Se s7 == 1000, o treino termina.
     la $t0, grad_W    #t0: Endereço do array de gradientes de W.
@@ -424,13 +466,15 @@ update_pesos:   #Aplica a Descida de Gradiente (atualiza W e b)
     mtc1 $t0, $f2   #Move N para float.
     cvt.s.w $f2, $f2
     div.s $f1, $f1, $f2   #f1 = alpha / N (Normaliza a taxa de aprendizado pela contagem de amostras).
-    #Atualização do Bias (b)
+
+    #3.10: Atualização do Bias (b)
     lwc1 $f3, b   #f3: Bias (b).
     lwc1 $f4, grad_b    #f4: Gradiente acumulado de b.
     mul.s $f4, $f4, $f1   #f4 = Gradiente * alpha / N.
     sub.s $f3, $f3, $f4   #b_novo = b_velho - alpha / N * Gradiente.
     swc1 $f3, b   #Salva o novo Bias.
-    # Atualização dos Pesos (W)
+
+    #3.11: Atualização dos Pesos (W)
     li $t1, 0   #t1: Índice do Peso.
 loop_update:
     beq $t1, 8, prox_epoch    #Se todos os 8 pesos foram atualizados, vai para o próximo epoch.
@@ -452,7 +496,7 @@ prox_epoch:
 
 fim_treino:
 
-    # 4. TESTE (MSE - Mean Squared Error)
+    #3.12: TESTE (MSE - Mean Squared Error)
     mtc1 $zero, $f20      #f20: Acumulador da Soma dos Erros Quadráticos (ŷ - y)^2.
     lw $t9, n_treino      #t9: Índice inicial do conjunto de Teste (igual ao n_treino).
     lw $t0, contador_linhas   #t0: Limite final (Total de Linhas).
@@ -501,8 +545,9 @@ fim_calculo_teste:
     syscall   #Imprime o MSE.
 
 # =================================================================
-# PARTE 5: IMPRESSÃO DOS PESOS APRENDIDOS
+# PARTE 4: IMPRESSÃO DOS PESOS APRENDIDOS
 # =================================================================
+
 print_parametros_finais:
     li $v0, 4
     la $a0, text_pesos_titulo
@@ -545,7 +590,7 @@ loop_print_w:
     j loop_print_w
 
 # =================================================================
-# PARTE 6: INTERAÇÃO COM USUÁRIO (APENAS PREDIÇÃO - SEM TREINO)
+# PARTE 5: INTERAÇÃO COM USUÁRIO (APENAS PREDIÇÃO - SEM TREINO)
 # =================================================================
 input_usuario:    #Loop de predição manual.
     li $v0, 4
