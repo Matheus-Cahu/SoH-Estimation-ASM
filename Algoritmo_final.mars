@@ -2,17 +2,19 @@
 # =================================================================
 # CONFIGURAÇÃO DO ARQUIVO
 # =================================================================
-nome_arquivo: .asciiz "C:\\AOC\\TRABALHO AOC\\batteryDataset.csv" 
+nome_arquivo: .asciiz "C:\\AOC\\TRABALHO AOC\\batteryDataset.csv"   #Endereço do dataset.
 
 # Buffer de Leitura (150kb)
-buffer: .space 150000  
+buffer: .space 150000   #Memória RAM reservada pro buffer.
 
 # =================================================================
 # CONSTANTES E TEXTOS
 # =================================================================
+# Mensagens de status para as fases de leitura e parsing do arquivo:
 text_abrir_sucesso: .asciiz "Arquivo aberto com sucesso!\nLendo e processando dados...\n"
 text_abrir_falha: .asciiz "ERRO: Falha ao abrir arquivo. Verifique se o caminho esta correto no codigo.\n"
 text_ler_sucesso: .asciiz "\n--- Leitura Concluida ---\nLinhas processadas: "
+# Mensagens para marcar início do treinamento e a exibição do erro final.
 text_inicio_ml:   .asciiz "\n\n--- Iniciando Treinamento com DATASET (Usuario nao interfere aqui) ---\n"
 text_resultado:   .asciiz "\n--- Treino Finalizado ---\nErro Medio Quadratico (MSE) no Teste: "
 
@@ -43,16 +45,16 @@ prompts_usuario:
     .word prompt_cycle, prompt_chI, prompt_chV, prompt_chT, prompt_disI, prompt_disV, prompt_disT, prompt_BCt
 
 # Variáveis de Controle
-contador_linhas: .word 0 
-constante_10:    .float 10.0
+contador_linhas: .word 0    #Total de linhas de dados.
+constante_10:    .float 10.0    #Constante de conversão de String para Float.
 
 # Constantes Matemáticas
-const_0_7:     .float 0.7    
-const_1_0:     .float 1.0    
+const_0_7:     .float 0.7   #Constante usada para split dos dados Treino/Teste.
+const_1_0:     .float 1.0    
 const_0_0:     .float 0.0    
 const_2_0:     .float 2.0    
-learning_rate: .float 0.01   
-epochs:        .word 1000    
+learning_rate: .float 0.01  #Taxa de aprendizado alpha do gradiente descendente. 
+epochs:        .word 1000   #Número de iterações de treinamento.
 
 # =================================================================
 # ARRAYS DE DADOS (ALINHADOS)
@@ -60,6 +62,7 @@ epochs:        .word 1000    
 .align 2  
 
 # Arrays (1000 linhas x 4 bytes)
+# Arrays para variáveis:
 array_cycle: .space 4000 
 array_chI:   .space 4000
 array_chV:   .space 4000
@@ -68,10 +71,11 @@ array_disI:  .space 4000
 array_disV:  .space 4000
 array_disT:  .space 4000
 array_BCt:   .space 4000
-array_SOH:   .space 4000
+# Arrays para variáveis de saída:
+array_SOH:   .space 4000  
 array_RUL:   .space 4000 
 
-# Tabela de ponteiros
+# Tabela de ponteiros ====> Armazena os endereços bases dos arrays de dados.
 .align 2
 ponteiros_arrays:
     .word array_cycle 
@@ -90,19 +94,19 @@ ponteiros_arrays:
 # =================================================================
 .align 2
 # Pesos (W) e Bias (b) - Estes serão modificados APENAS no treino
-W:          .float 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
-b:          .float 0.5       
+W:          .float 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5   #Pesos iniciais do modelo para cada característica de entrada.
+b:          .float 0.5      #Bias (b) inicial.
 
-# Gradientes (Usados só no treino)
+# Gradientes (Usados só no treino) - Acumulam o erro durante loop de treino.
 grad_W:     .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 grad_b:     .float 0.0
 
 # Médias e Desvios Padrão do DATASET (Usados como referência fixa para o usuário)
-array_medias: .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 
-array_stds:   .float 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 
+array_medias: .float 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0    #Armazenará a média de cada coluna após a fase de normalização.
+array_stds:   .float 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0    #Armazenará o desvio padrão.
 
-# Controle
-n_treino:   .word 0
+# Controle - Armazenam as contagens de linhas de treino e de teste respectivamente.
+n_treino:   .word 0 
 n_teste:    .word 0
 
 .text
