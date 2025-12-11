@@ -177,8 +177,8 @@ pular_char:
 achou_token:
     sb $zero, 0($s1)    #Substitui o delimitador (',' ou '\n') pelo null-terminator ('\0'). Isso transforma o token em uma string ASCIIZ temporária.
     beq $s3, $zero, proxima_coluna_logica   #Coluna 0 (s3 = 0) é o cabeçalho. Não processa.
-    move $a0, $s4    #Argumento 1 a0: Endereço do token (string ASCIIZ).
-    move $a1, $s3    #Argumento 2 a1: Índice da coluna (para saber onde salvar no array).
+    move $a0, $s4    #Argumento a0: Endereço do token (string ASCIIZ).
+    move $a1, $s3    #Argumento a1: Índice da coluna (para saber onde salvar no array).
     addi $sp, $sp, -4   #Aloca espaço na pilha.
     sw $ra, 0($sp)    #Salva o endereço de retorno.
     jal converter_e_salvar_float    #Chama a função auxiliar para converter a string em float e salvar no array.
@@ -187,16 +187,16 @@ achou_token:
 
 proxima_coluna_logica:
     addi $s3, $s3, 1    #Incrementa o contador de coluna s3.
-    addi $s1, $s1, 1    #Avança o ponteiro s1 para o caractere *depois* do delimitador ('\0' que foi inserido).
+    addi $s1, $s1, 1    #Avança o ponteiro s1 para o caractere depois do delimitador ('\0' que foi inserido).
     li $t9, 11          #Define o limite de colunas para uma linha (10 colunas + 1 de cabeçalho (0)).
-    bne $s3, $t9, prepara_proximo_token   #Se não for a 11ª coluna (ou seja, se a linha não terminou)...
+    bne $s3, $t9, prepara_proximo_token   #Se não for a 11ª coluna (ou seja, se a linha não terminou).
     lw $t8, contador_linhas   #Se a linha terminou (10 colunas de dados lidas), incrementa o contador de linhas.
     addi $t8, $t8, 1
     sw $t8, contador_linhas
-    li $s3, 0   #Reseta o contador de coluna ($s3) para 0 (próxima linha).
+    li $s3, 0   #Reseta o contador de coluna (s3) para 0 (próxima linha).
 
 prepara_proximo_token:
-    move $s4, $s1   #Salva o novo endereço de início do token ($s4) (o caractere depois do delimitador).
+    move $s4, $s1   #Salva o novo endereço de início do token (s4) (o caractere depois do delimitador).
     j loop_parse    #Volta para o loop principal para buscar o próximo caractere/token.
 
 fim_leitura_dados:
@@ -206,16 +206,16 @@ fim_leitura_dados:
     li $v0, 1   #Syscall para imprimir inteiro.
     lw $a0, contador_linhas   #Imprime o número total de linhas de dados processadas.
     syscall
-    j iniciar_machine_learning    #Pula para a próxima fase: Machine Learning.
+    j iniciar_machine_learning
 
 # ---------------------------------------------------------
 # FUNÇÃO AUXILIAR: ATOF (ASCII to Float)
 # ---------------------------------------------------------
 converter_e_salvar_float:
     lwc1 $f10, constante_10   #Carrega 10.0 em f10 (multiplicador para a conversão de dígitos).
-    mtc1 $zero, $f0   #Move 0 (de $zero) para o coprocessador de ponto flutuante f0.
-    cvt.s.w $f0, $f0    #Converte o inteiro 0 em float 0.0 ($f0 é o acumulador do float).
-    move $t0, $a0   #$t0: Ponteiro de leitura da string de entrada (recebido em $a0).
+    mtc1 $zero, $f0   #Move 0 para o coprocessador de ponto flutuante f0.
+    cvt.s.w $f0, $f0    #Converte o inteiro 0 em float 0.0 sendo f0 o acumulador do float.
+    move $t0, $a0   #t0: Ponteiro de leitura da string de entrada (recebido em a0).
 loop_atof:
     lb $t1, 0($t0)    #Carrega o caractere (byte) atual.
     beq $t1, $zero, fim_atof    #Se for '\0' (final da string), termina a conversão.
@@ -223,7 +223,7 @@ loop_atof:
     li $t3, 57    #ASCII do caractere '9'.
     blt $t1, $t2, prox_char_atof    #Se não for um dígito (menor que '0'), pula a conversão.
     bgt $t1, $t3, prox_char_atof    #Se não for um dígito (maior que '9'), pula a conversão.
-    sub $t1, $t1, $t2 # Converte o caractere do dígito (ex: '5') para seu valor inteiro (ex: 5).
+    sub $t1, $t1, $t2   #Converte o caractere do dígito (e.g.: '5') para seu valor inteiro (e.g.: 5).
     mtc1 $t1, $f1   #Move o valor do dígito para o coprocessador.
     cvt.s.w $f1, $f1    #Converte o valor inteiro (o dígito) para float.
     mul.s $f0, $f0, $f10    #Acumulador f0 = Acumulador * 10.0.
@@ -234,7 +234,7 @@ prox_char_atof:
 fim_atof:
     # --- Lógica para Salvar o Float no Array ---
     #A função deve salvar f0 (o valor float convertido) no array de destino.
-    addi $t4, $a1, -1   #t4 = Índice da coluna - 1. (0=Cycle, 1=chI, etc., mas a tabela de ponteiros começa com o índice 0).
+    addi $t4, $a1, -1   #t4 = Índice da coluna - 1. (0=Cycle, 1=chI, etc., mas a tabela de ponteiros começa com índice 0).
     la $t5, ponteiros_arrays    #t5: Endereço da Tabela de Ponteiros.
     sll $t4, $t4, 2   #t4 = (Índice - 1) * 4 bytes (offset na tabela de ponteiros).
     add $t5, $t5, $t4   #t5: Endereço do ponteiro (endereço do array) na tabela.
@@ -289,7 +289,7 @@ loop_media:
     addi $t1, $t1, 1    #Incrementa o índice da linha.
     j loop_media
 fim_media:
-    mtc1 $t0, $f2 #Move o total de linhas t0 para float f2.
+    mtc1 $t0, $f2   #Move o total de linhas t0 para float f2.
     cvt.s.w $f2, $f2
     div.s $f10, $f10, $f2   #f10 agora contém a média.
     
@@ -316,7 +316,7 @@ fim_std:
     div.s $f11, $f11, $f2   #f11 = Variância.
     sqrt.s $f11, $f11       #f11 = sigma.
     mtc1 $zero, $f4   #Move 0.0 para f4.
-    c.eq.s $f11, $f4    #Verifica se sigma = 0 (o que causaria divisão por zero na normalização). 
+    c.eq.s $f11, $f4    #Verifica se sigma = 0 (o que causa divisão por zero na normalização). 
     bc1f salvar_std   #Se sigma diferente de 0, vai para salvar.
     lwc1 $f11, const_1_0    #Se sigma = 0, define sigma = 1.0 (para evitar divisão por zero).
 salvar_std:
@@ -493,7 +493,7 @@ fim_calculo_teste:
     cvt.s.w $f2, $f2
     lwc1 $f3, const_2_0   #Carrega 2.0 (const_2_0).
     mul.s $f2, $f2, $f3   #f2 = 2 * N_teste.
-    div.s $f12, $f20, $f2  #f12 = Somatório (Erro)^2/2 * N_teste. (Calcula o MSE - Mean Squared Error).
+    div.s $f12, $f20, $f2  #f12 = Somatório (Erro)^2/2 * N_teste. (Calcula o Mean Squared Error).
     li $v0, 4
     la $a0, text_resultado
     syscall
@@ -633,7 +633,7 @@ mostrar_resultado_usuario:
     syscall
     move $t9, $v0   #t9: Recebe a escolha do usuário (1=Sim, 0=Não).
     
-    bne $t9, $zero, input_usuario   #Se a escolha for '1' (não for 0), volta para o loop de entrada.
+    bne $t9, $zero, input_usuario   #Se a escolha for 1, volta para o loop de entrada.
 
 end_program:
     li $v0, 10    #Syscall de encerramento.
