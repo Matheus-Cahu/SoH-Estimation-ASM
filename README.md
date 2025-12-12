@@ -20,7 +20,7 @@ A escolha do MIPS visa explorar a execução de cálculos matemáticos e manipul
 
 | Arquivo | Descrição |
 | :--- | :--- |
-| `Algoritmo_final.mars` | **Programa Principal em MIPS.** Contém a lógica de Regressão Linear para carregar os dados, treinar o modelo (calcular $\theta_0$ e $\theta_1$) e realizar predições de SOH. |
+| `Algoritmo_final.mars` | **Programa Principal em MIPS.** Contém a lógica de Regressão Linear para carregar os dados, treinar o modelo e realizar predições de SOH. |
 | `batteryDataset.csv` | **Banco de Dados Ordenado.** Conjunto de dados original (ou versão limpa) contendo as variáveis (e.g., Ciclos de Carga, SOH) para treinamento e teste. |
 | `datasetEmbaralhado` | **Banco de Dados Embaralhado.** Versão do dataset com as linhas aleatorizadas. Essencial para garantir que os conjuntos de treino e teste sejam homogêneos e representativos da distribuição total dos dados. |
 | `regressaoLinear.py` | **Implementação de Referência em Python.** Versão inicial do algoritmo de Regressão Linear. Serve como base de validação e como guia lógico para a tradução para Assembly MIPS. |
