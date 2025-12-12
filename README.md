@@ -45,7 +45,7 @@ Para executar a implementação em MIPS, é necessário utilizar o simulador **M
 ### 3. Execução
 
 1.  **Execute:** Clique no botão **"Run"** (ou use F5).
-2.  **Acompanhamento:** A execução no console (aba *Run I/O*) exibirá a iteração do algoritmo, os valores calculados para os parâmetros do modelo ($\theta_0$ e $\theta_1$), o erro (função de custo) e, idealmente, os resultados das predições de SOH.
+2.  **Acompanhamento:** A execução no console (aba *Run I/O*) exibirá a iteração do algoritmo, os valores calculados para os parâmetros do modelo, o erro (função de custo) e, idealmente, os resultados das predições de SOH.
 
 > **Nota:** A complexidade da manipulação de ponto flutuante e a leitura de arquivos em MIPS exigem que os dados de entrada sejam formatados de maneira específica (e.g., armazenados em memória como números de ponto flutuante IEEE 754, ou como inteiros que representam os valores). Consulte o cabeçalho de `Algoritmo_final.mars` para entender o formato exato esperado para a leitura dos dados.
 
