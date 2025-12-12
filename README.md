@@ -24,7 +24,7 @@ A escolha do MIPS visa explorar a execução de cálculos matemáticos e manipul
 | `batteryDataset.csv` | **Banco de Dados Ordenado.** Conjunto de dados original (ou versão limpa) contendo as variáveis (e.g., Ciclos de Carga, SOH) para treinamento e teste. |
 | `datasetEmbaralhado` | **Banco de Dados Embaralhado.** Versão do dataset com as linhas aleatorizadas. Essencial para garantir que os conjuntos de treino e teste sejam homogêneos e representativos da distribuição total dos dados. |
 | `regressaoLinear.py` | **Implementação de Referência em Python.** Versão inicial do algoritmo de Regressão Linear. Serve como base de validação e como guia lógico para a tradução para Assembly MIPS. |
-
+| `Relatório_Regressao_Linear_ASM.pdf` | **Relatório Detalhado do projeto.** Detalhes sobre metodologia, referências e processo de implementação estão disponíveis neste pdf.
 ---
 
 ## 🚀 Como Executar o Projeto
