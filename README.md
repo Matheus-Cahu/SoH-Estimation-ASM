@@ -39,7 +39,7 @@ Para executar a implementação em MIPS, é necessário utilizar o simulador **M
 
 1.  **Carregue o Programa:** Abra o simulador MARS.
 2.  **Abrir Arquivo:** Carregue o arquivo `Algoritmo_final.mars` no simulador.
-3.  **Configurar Dados:** O programa MIPS é configurado para ler dados de entrada específicos. **Certifique-se de que o arquivo de dados a ser lido (geralmente o `datasetEmbaralhado` ou uma versão pré-processada compatível com o formato de leitura do MIPS) esteja na mesma pasta do `Algoritmo_final.mars` ou que o caminho do arquivo no código MIPS esteja correto.**
+3.  **Configurar Dados:** O programa MIPS é configurado para ler dados de entrada específicos. **Certifique-se de que o arquivo de dados a ser lido (geralmente o `datasetEmbaralhado` ou uma versão pré-processada compatível com o formato de leitura do MIPS) esteja na mesma pasta do `Assembly MIPS` ou que o caminho do arquivo no código MIPS esteja correto.**
 4.  **Monte:** Clique no botão **"Assemble"** (ou use F3).
 
 ### 3. Execução
@@ -85,10 +85,3 @@ $$
 $$
 
 
----
-
-## 💡 Contribuições e Melhorias Futuras
-
-* **Aceleração de Ponto Flutuante:** Explorar a unidade de Ponto Flutuante (FPU) do MIPS de forma mais aprofundada para otimizar os cálculos.
-* **Melhoria na Leitura de Dados:** Implementar rotinas mais robustas para a leitura de arquivos `.csv` no MIPS.
-* **Visualização:** Integração com ferramentas externas (via saída de console) para visualização da linha de regressão e do decaimento do custo.
